@@ -17,6 +17,4 @@ Paper : [Fast calculation method for optical diffraction on tilted planes by use
 - R : increase / decrease aperture radius
 - P : increase / decrease propagation distance
 - X/Y/Z : increase / decrease rotation angle around XYZ axis
-- T / P : light emission angle(theta / phi)
-- K : increase / decrease light intensity
 
