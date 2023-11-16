@@ -1,0 +1,147 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="ソース ファイル">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="ヘッダー ファイル">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="リソース ファイル">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="ソース ファイル\shaders">
+      <UniqueIdentifier>{a4d6dc5b-1d23-435c-9d6d-db92bf31dd1e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\External">
+      <UniqueIdentifier>{9039de10-ac2f-4209-8076-e89d0247ba5d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\Core">
+      <UniqueIdentifier>{c9d39aae-cd13-4f55-a5fc-382339d4e061}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\Core">
+      <UniqueIdentifier>{a5c4e37f-1f0d-4fdd-82fd-5b1bee427281}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\Common">
+      <UniqueIdentifier>{c3535bac-4039-4289-89b7-697090f31744}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\Common">
+      <UniqueIdentifier>{a764a4e5-ce6e-4784-a9cc-9aa134d85d4b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\Diffraction">
+      <UniqueIdentifier>{7a2aacda-20b2-44d7-9287-ba1346c6de0a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\Diffraction">
+      <UniqueIdentifier>{bb904edd-f2e4-4659-8f42-37c7c180f84f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Main.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\src\RenderDeviceDX12.cpp">
+      <Filter>ソース ファイル\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="ComputeShader.cpp">
+      <Filter>ソース ファイル\Diffraction</Filter>
+    </ClCompile>
+    <ClCompile Include="CreateBuffer.cpp">
+      <Filter>ソース ファイル\Diffraction</Filter>
+    </ClCompile>
+    <ClCompile Include="Diffraction.cpp">
+      <Filter>ソース ファイル\Diffraction</Filter>
+    </ClCompile>
+    <ClCompile Include="LoadTexture.cpp">
+      <Filter>ソース ファイル\Diffraction</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\src\utility\Utility.cpp">
+      <Filter>ソース ファイル\Common</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\common\include\d3dx12.h">
+      <Filter>ヘッダー ファイル\External</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\include\AppBase.h">
+      <Filter>ヘッダー ファイル\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\include\AppInvoker.h">
+      <Filter>ヘッダー ファイル\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\include\RenderDeviceDX12.h">
+      <Filter>ヘッダー ファイル\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Diffraction.h">
+      <Filter>ヘッダー ファイル\Diffraction</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\include\utility\Utility.h">
+      <Filter>ヘッダー ファイル\Common</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="shaders\clearFloat.hlsl">
+      <Filter>ソース ファイル\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\FFT_512_COL_execute.hlsl">
+      <Filter>ソース ファイル\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\FFT_512_COL_INVERSE_execute.hlsl">
+      <Filter>ソース ファイル\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\FFT_512_ROW_execute.hlsl">
+      <Filter>ソース ファイル\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\FFT_512_ROW_INVERSE_execute.hlsl">
+      <Filter>ソース ファイル\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\frequencyResponseFunction.hlsl">
+      <Filter>ソース ファイル\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\multiply.hlsl">
+      <Filter>ソース ファイル\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\complexMultiply.hlsl">
+      <Filter>ソース ファイル\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\complexIntensity.hlsl">
+      <Filter>ソース ファイル\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\drawPolygon.hlsl">
+      <Filter>ソース ファイル\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\fftAdjust.hlsl">
+      <Filter>ソース ファイル\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\float1tofloat4.hlsl">
+      <Filter>ソース ファイル\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\complexPhase.hlsl">
+      <Filter>ソース ファイル\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\constructResult.hlsl">
+      <Filter>ソース ファイル\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\rotateInFourierSpace.hlsl">
+      <Filter>ソース ファイル\shaders</Filter>
+    </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="diffraction.rc">
+      <Filter>リソース ファイル</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="diffraction.ico">
+      <Filter>リソース ファイル</Filter>
+    </Image>
+  </ItemGroup>
+</Project>
