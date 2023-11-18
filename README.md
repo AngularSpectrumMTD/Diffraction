@@ -1,11 +1,12 @@
 # Diffraction
 Real-time Optical Diffraction Simulation by use of Angular Spectrum Method
 
-![5poly](https://github.com/AngularSpectrumMTD/Diffraction/assets/65929274/daee1bc5-da0d-46b3-bed4-82356c3deb27)
+![cir](https://github.com/AngularSpectrumMTD/Diffraction/assets/65929274/4585a95f-5737-4fc4-9502-8ba12023e27a)
 
-![Circle](https://github.com/AngularSpectrumMTD/Diffraction/assets/65929274/953d512b-94e8-40ad-9389-6eaf925ff6a1)
+![pen](https://github.com/AngularSpectrumMTD/Diffraction/assets/65929274/a42918e5-af9e-4320-bb43-dfe223f74aa8)
 
-![Triangle](https://github.com/AngularSpectrumMTD/Diffraction/assets/65929274/3ffbb416-1560-4e38-adf4-30fd05a3dac6)
+![tri](https://github.com/AngularSpectrumMTD/Diffraction/assets/65929274/57e212f4-025e-4fe7-8638-91fe8d5dce51)
+
 
 ### Algorithm
 Band-Limited Angular Spectrum
