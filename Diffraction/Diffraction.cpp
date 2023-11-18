@@ -16,6 +16,8 @@ using namespace DirectX;
 
 #define STATE_SRV D3D12_RESOURCE_STATE_COPY_SOURCE
 #define STATE_UAV D3D12_RESOURCE_STATE_UNORDERED_ACCESS
+#define STATE_SRC D3D12_RESOURCE_STATE_COPY_SOURCE
+#define STATE_DST D3D12_RESOURCE_STATE_COPY_DEST
 
 Diffraction::Diffraction(u32 width, u32 height) : AppBase(width, height, L"Diffraction")
 {
@@ -54,6 +56,97 @@ void Diffraction::UpdateResultState(const D3D12_RESOURCE_STATES dst)
         mCommandList->ResourceBarrier(1, &barrier);
         mResultState = dst;
     }
+}
+
+dx12::Descriptor Diffraction::getFullColorIntensitySRV()
+{
+    if (STATE_SRV != mResultState)
+    {
+        auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(mFullColorIntensityBuffer.Get(), mFullColorIntensityState, STATE_SRV);
+        mCommandList->ResourceBarrier(1, &barrier);
+        mFullColorIntensityState = STATE_SRV;
+    }
+    return mFullColorIntensitySRV;
+}
+
+dx12::Descriptor Diffraction::getFullColorIntensityUAV()
+{
+    if (STATE_UAV != mFullColorIntensityState)
+    {
+        auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(mFullColorIntensityBuffer.Get(), mFullColorIntensityState, STATE_UAV);
+        mCommandList->ResourceBarrier(1, &barrier);
+        mFullColorIntensityState = STATE_UAV;
+    }
+    return mFullColorIntensityUAV;
+}
+
+dx12::Descriptor Diffraction::getWorkBufferSRV(const u32 idx)
+{
+    UpdateWorkState(STATE_SRV, idx);
+    return mWorkSRVTbl[idx];
+}
+
+dx12::Descriptor Diffraction::getWorkBufferUAV(const u32 idx)
+{
+    UpdateWorkState(STATE_UAV, idx);
+    return mWorkUAVTbl[idx];
+}
+
+ComPtr<ID3D12Resource> Diffraction::getWorkBufferSRC(const u32 idx)
+{
+    UpdateWorkState(STATE_SRC, idx);
+    return mWorkBufferTbl[idx];
+}
+
+ComPtr<ID3D12Resource> Diffraction::getWorkBufferDST(const u32 idx)
+{
+    UpdateWorkState(STATE_DST, idx);
+    return mWorkBufferTbl[idx];
+}
+
+dx12::Descriptor Diffraction::getInputSpectrumSRV(const u32 idx)
+{
+    if (STATE_SRV != mInputSpectrumStateTbl[idx])
+    {
+        auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(mInputSpectrumBufferTbl[idx].Get(), mInputSpectrumStateTbl[idx], STATE_SRV);
+        mCommandList->ResourceBarrier(1, &barrier);
+        mInputSpectrumStateTbl[idx] = STATE_SRV;
+    }
+    return mInputSpectrumSRVTbl[idx];
+}
+
+dx12::Descriptor Diffraction::getInputSpectrumUAV(const u32 idx)
+{
+    if (STATE_UAV != mInputSpectrumStateTbl[idx])
+    {
+        auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(mInputSpectrumBufferTbl[idx].Get(), mInputSpectrumStateTbl[idx], STATE_UAV);
+        mCommandList->ResourceBarrier(1, &barrier);
+        mInputSpectrumStateTbl[idx] = STATE_UAV;
+    }
+    return mInputSpectrumUAVTbl[idx];
+}
+
+ComPtr<ID3D12Resource> Diffraction::getInputSpectrumDST(const u32 idx)
+{
+    if (STATE_DST != mInputSpectrumStateTbl[idx])
+    {
+        auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(mInputSpectrumBufferTbl[idx].Get(), mInputSpectrumStateTbl[idx], STATE_DST);
+        mCommandList->ResourceBarrier(1, &barrier);
+        mInputSpectrumStateTbl[idx] = STATE_DST;
+    }
+    return mInputSpectrumBufferTbl[idx];
+}
+
+dx12::Descriptor Diffraction::getResultBufferSRV()
+{
+    UpdateResultState(STATE_SRV);
+    return mResultSRV;
+}
+
+dx12::Descriptor Diffraction::getResultBufferUAV()
+{
+    UpdateResultState(STATE_UAV);
+    return mResultUAV;
 }
 
 void Diffraction::Initialize()
@@ -159,12 +252,6 @@ void Diffraction::UpdateConstantBufferParams()
 {
     auto polygonConstantBuffer = mDrawPolygonCB.Get();
     mDevice->ImmediateBufferUpdateHostVisible(polygonConstantBuffer, &mDrawPolygonParam, sizeof(mDrawPolygonParam));
-
-    auto generateFRFConstantBuffer = mGenerateFRFCB.Get();
-    mDevice->ImmediateBufferUpdateHostVisible(generateFRFConstantBuffer, &mGenerateFRFParam, sizeof(mGenerateFRFParam));
-
-    auto rotateInFourierSpaceConstantBuffer = mRotateInFourierCB.Get();
-    mDevice->ImmediateBufferUpdateHostVisible(rotateInFourierSpaceConstantBuffer, &mRotateInFourierParam, sizeof(mRotateInFourierParam));
 }
 
 void Diffraction::PreProcess()
@@ -225,161 +312,155 @@ void Diffraction::BandLimitedASMProp()
 {
     for (u32 i = 0; i < WORK_BUFFER_SIZE; i++)
     {
-        UpdateWorkState(STATE_UAV, i);
         mCommandList->SetComputeRootSignature(mRsClearFloat.Get());
-        mCommandList->SetComputeRootDescriptorTable(mRegisterMapClearFloat["tex"], mWorkUAVTbl[i].hGpu);
+        mCommandList->SetComputeRootDescriptorTable(mRegisterMapClearFloat["tex"], getWorkBufferUAV(i).hGpu);
         mCommandList->SetPipelineState(mClearFloatPSO.Get());
         Dispatch(EXECUTE_SIZE / NORMAL_THREAD_SIZE, EXECUTE_SIZE / NORMAL_THREAD_SIZE, L"ClearFloat");
     }
+
+    mCommandList->SetComputeRootSignature(mRsClearFloat4.Get());
+    mCommandList->SetComputeRootDescriptorTable(mRegisterMapClearFloat4["tex"], getFullColorIntensityUAV().hGpu);
+    mCommandList->SetPipelineState(mClearFloat4PSO.Get());
+    Dispatch(EXECUTE_SIZE / NORMAL_THREAD_SIZE, EXECUTE_SIZE / NORMAL_THREAD_SIZE, L"ClearFloat4");
 
     std::vector<CD3DX12_RESOURCE_BARRIER> uavBarrier0;
     uavBarrier0.emplace_back(CD3DX12_RESOURCE_BARRIER::UAV(mWorkBufferTbl[0].Get()));
     mCommandList->ResourceBarrier(u32(uavBarrier0.size()), uavBarrier0.data());
 
-    UpdateWorkState(STATE_UAV, 0);
     mCommandList->SetComputeRootSignature(mRsDrawPolygon.Get());
     mCommandList->SetComputeRootConstantBufferView(mRegisterMapDrawPolygon["constantBuffer"], mDrawPolygonCB.Get()->GetGPUVirtualAddress());
-    mCommandList->SetComputeRootDescriptorTable(mRegisterMapDrawPolygon["polygon"], mWorkUAVTbl[0].hGpu);
+    mCommandList->SetComputeRootDescriptorTable(mRegisterMapDrawPolygon["polygon"], getWorkBufferUAV(0).hGpu);
     mCommandList->SetPipelineState(mDrawPolygonPSO.Get());
     Dispatch(EXECUTE_SIZE / NORMAL_THREAD_SIZE, EXECUTE_SIZE / NORMAL_THREAD_SIZE, L"DrawPolygon");
 
-    UpdateWorkState(STATE_SRV, 0);
-    UpdateWorkState(STATE_SRV, 1);
-    UpdateWorkState(STATE_UAV, 2);
-    UpdateWorkState(STATE_UAV, 3);
     mCommandList->SetComputeRootSignature(mRsFFT.Get());
-    mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT["realSrc"], mWorkSRVTbl[0].hGpu);
-    mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT["imagSrc"], mWorkSRVTbl[1].hGpu);
-    mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT["realDst"], mWorkUAVTbl[2].hGpu);
-    mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT["imagDst"], mWorkUAVTbl[3].hGpu);
+    mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT["realSrc"], getWorkBufferSRV(0).hGpu);
+    mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT["imagSrc"], getWorkBufferSRV(1).hGpu);
+    mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT["realDst"], getWorkBufferUAV(2).hGpu);
+    mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT["imagDst"], getWorkBufferUAV(3).hGpu);
     mCommandList->SetPipelineState(mFFT_rowPSO.Get());
     Dispatch(1, EXECUTE_SIZE, L"FFT_row");
 
-    UpdateWorkState(STATE_SRV, 2);
-    UpdateWorkState(STATE_SRV, 3);
-    UpdateWorkState(STATE_UAV, 0);
-    UpdateWorkState(STATE_UAV, 1);
     mCommandList->SetComputeRootSignature(mRsFFT.Get());
-    mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT["realSrc"], mWorkSRVTbl[2].hGpu);
-    mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT["imagSrc"], mWorkSRVTbl[3].hGpu);
-    mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT["realDst"], mWorkUAVTbl[0].hGpu);
-    mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT["imagDst"], mWorkUAVTbl[1].hGpu);
+    mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT["realSrc"], getWorkBufferSRV(2).hGpu);
+    mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT["imagSrc"], getWorkBufferSRV(3).hGpu);
+    mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT["realDst"], getWorkBufferUAV(0).hGpu);
+    mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT["imagDst"], getWorkBufferUAV(1).hGpu);
     mCommandList->SetPipelineState(mFFT_colPSO.Get());
     Dispatch(1, EXECUTE_SIZE, L"FFT_col");
 
-    UpdateWorkState(STATE_UAV, 2);
-    UpdateWorkState(STATE_UAV, 3);
-    mCommandList->SetComputeRootSignature(mRsGenerateFRF.Get());
-    mCommandList->SetComputeRootConstantBufferView(mRegisterMapGenerateFRF["constantBuffer"], mGenerateFRFCB.Get()->GetGPUVirtualAddress());
-    mCommandList->SetComputeRootDescriptorTable(mRegisterMapGenerateFRF["real"], mWorkUAVTbl[2].hGpu);
-    mCommandList->SetComputeRootDescriptorTable(mRegisterMapGenerateFRF["imag"], mWorkUAVTbl[3].hGpu);
-    mCommandList->SetPipelineState(mGenerateFRFPSO.Get());
-    Dispatch(EXECUTE_SIZE / NORMAL_THREAD_SIZE, EXECUTE_SIZE / NORMAL_THREAD_SIZE, L"GenerateFRF");
+    //この時点の周波数スペクトルは波長に依存しないので保持
+    mCommandList->CopyResource(getInputSpectrumDST(0).Get(), getWorkBufferSRC(0).Get());
+    mCommandList->CopyResource(getInputSpectrumDST(1).Get(), getWorkBufferSRC(1).Get());
 
-    std::vector<CD3DX12_RESOURCE_BARRIER> uavBarrier1;
-    uavBarrier1.emplace_back(CD3DX12_RESOURCE_BARRIER::UAV(mWorkBufferTbl[0].Get()));
-    uavBarrier1.emplace_back(CD3DX12_RESOURCE_BARRIER::UAV(mWorkBufferTbl[1].Get()));
-    mCommandList->ResourceBarrier(u32(uavBarrier1.size()), uavBarrier1.data());
-
-    UpdateWorkState(STATE_SRV, 2);
-    UpdateWorkState(STATE_SRV, 3);
-    UpdateWorkState(STATE_UAV, 0);
-    UpdateWorkState(STATE_UAV, 1);
-    mCommandList->SetComputeRootSignature(mRsComplexMultiply.Get());
-    mCommandList->SetComputeRootDescriptorTable(mRegisterMapComplexMultiply["real0"], mWorkSRVTbl[2].hGpu);
-    mCommandList->SetComputeRootDescriptorTable(mRegisterMapComplexMultiply["imag0"], mWorkSRVTbl[3].hGpu);
-    mCommandList->SetComputeRootDescriptorTable(mRegisterMapComplexMultiply["real1"], mWorkUAVTbl[0].hGpu);
-    mCommandList->SetComputeRootDescriptorTable(mRegisterMapComplexMultiply["imag1"], mWorkUAVTbl[1].hGpu);
-    mCommandList->SetPipelineState(mComplexMultiplyPSO.Get());
-    Dispatch(EXECUTE_SIZE / NORMAL_THREAD_SIZE, EXECUTE_SIZE / NORMAL_THREAD_SIZE, L"ComplexMultiply");
-
-    UpdateWorkState(STATE_SRV, 0);
-    UpdateWorkState(STATE_SRV, 1);
-    UpdateWorkState(STATE_UAV, 2);
-    UpdateWorkState(STATE_UAV, 3);
-    mCommandList->SetComputeRootSignature(mRsRotateInFourierSpace.Get());
-    mCommandList->SetComputeRootConstantBufferView(mRegisterMapRotateInFourierSpace["constantBuffer"], mRotateInFourierCB.Get()->GetGPUVirtualAddress());
-    mCommandList->SetComputeRootDescriptorTable(mRegisterMapRotateInFourierSpace["realSrc"], mWorkSRVTbl[0].hGpu);
-    mCommandList->SetComputeRootDescriptorTable(mRegisterMapRotateInFourierSpace["imagSrc"], mWorkSRVTbl[1].hGpu);
-    mCommandList->SetComputeRootDescriptorTable(mRegisterMapRotateInFourierSpace["realDst"], mWorkUAVTbl[2].hGpu);
-    mCommandList->SetComputeRootDescriptorTable(mRegisterMapRotateInFourierSpace["imagDst"], mWorkUAVTbl[3].hGpu);
-    mCommandList->SetPipelineState(mRotateInFourierSpacePSO.Get());
-    Dispatch(EXECUTE_SIZE / NORMAL_THREAD_SIZE, EXECUTE_SIZE / NORMAL_THREAD_SIZE, L"RotateInFourierSpace");
-    
-    UpdateWorkState(STATE_SRV, 2);
-    UpdateWorkState(STATE_SRV, 3);
-    UpdateWorkState(STATE_UAV, 0);
-    UpdateWorkState(STATE_UAV, 1);
-    mCommandList->SetComputeRootSignature(mRsFFT.Get());
-    mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT["realSrc"], mWorkSRVTbl[2].hGpu);
-    mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT["imagSrc"], mWorkSRVTbl[3].hGpu);
-    mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT["realDst"], mWorkUAVTbl[0].hGpu);
-    mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT["imagDst"], mWorkUAVTbl[1].hGpu);
-    mCommandList->SetPipelineState(mInvFFT_rowPSO.Get());
-    Dispatch(1, EXECUTE_SIZE, L"invFFT_row");
-   
-    UpdateWorkState(STATE_SRV, 0);
-    UpdateWorkState(STATE_SRV, 1);
-    UpdateWorkState(STATE_UAV, 2);
-    UpdateWorkState(STATE_UAV, 3);
-    mCommandList->SetComputeRootSignature(mRsFFT.Get());
-    mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT["realSrc"], mWorkSRVTbl[0].hGpu);
-    mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT["imagSrc"], mWorkSRVTbl[1].hGpu);
-    mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT["realDst"], mWorkUAVTbl[2].hGpu);
-    mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT["imagDst"], mWorkUAVTbl[3].hGpu);
-    mCommandList->SetPipelineState(mInvFFT_colPSO.Get());
-    Dispatch(1, EXECUTE_SIZE, L"invFFT_col");
-
-    std::vector<CD3DX12_RESOURCE_BARRIER> uavBarrier2;
-    uavBarrier2.emplace_back(CD3DX12_RESOURCE_BARRIER::UAV(mWorkBufferTbl[2].Get()));
-    uavBarrier2.emplace_back(CD3DX12_RESOURCE_BARRIER::UAV(mWorkBufferTbl[3].Get()));
-    mCommandList->ResourceBarrier(u32(uavBarrier2.size()), uavBarrier2.data());
-
-    mCommandList->SetComputeRootSignature(mRsFFT_Adjust.Get());
-    mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT_Adjust["real"], mWorkUAVTbl[2].hGpu);
-    mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT_Adjust["imag"], mWorkUAVTbl[3].hGpu);
-    mCommandList->SetPipelineState(mFFT_AdjustPSO.Get());
-    Dispatch(EXECUTE_SIZE / NORMAL_THREAD_SIZE, EXECUTE_SIZE / NORMAL_THREAD_SIZE, L"FFT_Adjust");
-   
-    //Result 2: Intensity 3: Phase 0: SourceField
+    //波長ループ開始
+    for (u32 i = 0; i < LAMBDA_NUM; i++)
     {
-        UpdateWorkState(STATE_SRV, 2);
-        UpdateWorkState(STATE_SRV, 3);
-        UpdateWorkState(STATE_UAV, 0);
-        mCommandList->SetComputeRootSignature(mRsComplexIntensity.Get());
-        mCommandList->SetComputeRootDescriptorTable(mRegisterMapComplexIntensity["real"], mWorkSRVTbl[2].hGpu);
-        mCommandList->SetComputeRootDescriptorTable(mRegisterMapComplexIntensity["imag"], mWorkSRVTbl[3].hGpu);
-        mCommandList->SetComputeRootDescriptorTable(mRegisterMapComplexIntensity["intensity"], mWorkUAVTbl[0].hGpu);
-        mCommandList->SetPipelineState(mComplexIntensityPSO.Get());
-        Dispatch(EXECUTE_SIZE / NORMAL_THREAD_SIZE, EXECUTE_SIZE / NORMAL_THREAD_SIZE, L"ComplexIntensity");
+        const f32 lambdaNM = LAMBDA_VIO_NM + i * LAMBDA_STEP;
 
-        UpdateWorkState(STATE_SRV, 2);
-        UpdateWorkState(STATE_SRV, 3);
-        UpdateWorkState(STATE_UAV, 1);
-        mCommandList->SetComputeRootSignature(mRsComplexPhase.Get());
-        mCommandList->SetComputeRootDescriptorTable(mRegisterMapComplexPhase["real"], mWorkSRVTbl[2].hGpu);
-        mCommandList->SetComputeRootDescriptorTable(mRegisterMapComplexPhase["imag"], mWorkSRVTbl[3].hGpu);
-        mCommandList->SetComputeRootDescriptorTable(mRegisterMapComplexPhase["phase"], mWorkUAVTbl[1].hGpu);
-        mCommandList->SetPipelineState(mComplexPhasePSO.Get());
-        Dispatch(EXECUTE_SIZE / NORMAL_THREAD_SIZE, EXECUTE_SIZE / NORMAL_THREAD_SIZE, L"ComplexPhase");
+        mCompositeIntensityParam.wavelengthNM = lambdaNM;
+        mGenerateFRFParam.wavelength = lambdaNM * 1e-9;
+        mRotateInFourierParam.wavelength = lambdaNM * 1e-9;
 
-        UpdateWorkState(STATE_UAV, 2);
-        mCommandList->SetComputeRootSignature(mRsDrawPolygon.Get());
-        mCommandList->SetComputeRootConstantBufferView(mRegisterMapDrawPolygon["constantBuffer"], mDrawPolygonCB.Get()->GetGPUVirtualAddress());
-        mCommandList->SetComputeRootDescriptorTable(mRegisterMapDrawPolygon["polygon"], mWorkUAVTbl[2].hGpu);
-        mCommandList->SetPipelineState(mDrawPolygonPSO.Get());
-        Dispatch(EXECUTE_SIZE / NORMAL_THREAD_SIZE, EXECUTE_SIZE / NORMAL_THREAD_SIZE, L"DrawPolygon");
-    }
+        auto compositeIntensityConstantBuffer = mCompositeIntensityCBTbl[i].Get();
+        mDevice->ImmediateBufferUpdateHostVisible(compositeIntensityConstantBuffer, &mCompositeIntensityParam, sizeof(mCompositeIntensityParam));
+        auto generateFRFConstantBuffer = mGenerateFRFCBTbl[i].Get();
+        mDevice->ImmediateBufferUpdateHostVisible(generateFRFConstantBuffer, &mGenerateFRFParam, sizeof(mGenerateFRFParam));
+        auto rotateInFourierSpaceCconstantBuffer = mRotateInFourierCBTbl[i].Get();
+        mDevice->ImmediateBufferUpdateHostVisible(rotateInFourierSpaceCconstantBuffer, &mRotateInFourierParam, sizeof(mRotateInFourierParam));
 
-    UpdateWorkState(STATE_SRV, 0);
-    UpdateWorkState(STATE_SRV, 1);
-    UpdateWorkState(STATE_SRV, 2);
-    UpdateResultState(STATE_UAV);
+        mCommandList->SetComputeRootSignature(mRsGenerateFRF.Get());
+        mCommandList->SetComputeRootConstantBufferView(mRegisterMapGenerateFRF["constantBuffer"], mGenerateFRFCBTbl[i].Get()->GetGPUVirtualAddress());
+        mCommandList->SetComputeRootDescriptorTable(mRegisterMapGenerateFRF["real"], getWorkBufferUAV(0).hGpu);
+        mCommandList->SetComputeRootDescriptorTable(mRegisterMapGenerateFRF["imag"], getWorkBufferUAV(1).hGpu);
+        mCommandList->SetPipelineState(mGenerateFRFPSO.Get());
+        Dispatch(EXECUTE_SIZE / NORMAL_THREAD_SIZE, EXECUTE_SIZE / NORMAL_THREAD_SIZE, L"GenerateFRF");
+
+        std::vector<CD3DX12_RESOURCE_BARRIER> uavBarrier1;
+        uavBarrier1.emplace_back(CD3DX12_RESOURCE_BARRIER::UAV(mWorkBufferTbl[0].Get()));
+        uavBarrier1.emplace_back(CD3DX12_RESOURCE_BARRIER::UAV(mWorkBufferTbl[1].Get()));
+        mCommandList->ResourceBarrier(u32(uavBarrier1.size()), uavBarrier1.data());
+
+        mCommandList->SetComputeRootSignature(mRsComplexMultiply.Get());
+        mCommandList->SetComputeRootDescriptorTable(mRegisterMapComplexMultiply["real0"], getInputSpectrumSRV(0).hGpu);
+        mCommandList->SetComputeRootDescriptorTable(mRegisterMapComplexMultiply["imag0"], getInputSpectrumSRV(1).hGpu);
+        mCommandList->SetComputeRootDescriptorTable(mRegisterMapComplexMultiply["real1"], getWorkBufferUAV(0).hGpu);
+        mCommandList->SetComputeRootDescriptorTable(mRegisterMapComplexMultiply["imag1"], getWorkBufferUAV(1).hGpu);
+        mCommandList->SetPipelineState(mComplexMultiplyPSO.Get());
+        Dispatch(EXECUTE_SIZE / NORMAL_THREAD_SIZE, EXECUTE_SIZE / NORMAL_THREAD_SIZE, L"ComplexMultiply");
+
+        mCommandList->SetComputeRootSignature(mRsRotateInFourierSpace.Get());
+        mCommandList->SetComputeRootConstantBufferView(mRegisterMapRotateInFourierSpace["constantBuffer"], mRotateInFourierCBTbl[i].Get()->GetGPUVirtualAddress());
+        mCommandList->SetComputeRootDescriptorTable(mRegisterMapRotateInFourierSpace["realSrc"], getWorkBufferSRV(0).hGpu);
+        mCommandList->SetComputeRootDescriptorTable(mRegisterMapRotateInFourierSpace["imagSrc"], getWorkBufferSRV(1).hGpu);
+        mCommandList->SetComputeRootDescriptorTable(mRegisterMapRotateInFourierSpace["realDst"], getWorkBufferUAV(2).hGpu);
+        mCommandList->SetComputeRootDescriptorTable(mRegisterMapRotateInFourierSpace["imagDst"], getWorkBufferUAV(3).hGpu);
+        mCommandList->SetPipelineState(mRotateInFourierSpacePSO.Get());
+        Dispatch(EXECUTE_SIZE / NORMAL_THREAD_SIZE, EXECUTE_SIZE / NORMAL_THREAD_SIZE, L"RotateInFourierSpace");
+
+        mCommandList->SetComputeRootSignature(mRsFFT.Get());
+        mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT["realSrc"], getWorkBufferSRV(2).hGpu);
+        mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT["imagSrc"], getWorkBufferSRV(3).hGpu);
+        mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT["realDst"], getWorkBufferUAV(0).hGpu);
+        mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT["imagDst"], getWorkBufferUAV(1).hGpu);
+        mCommandList->SetPipelineState(mInvFFT_rowPSO.Get());
+        Dispatch(1, EXECUTE_SIZE, L"invFFT_row");
+
+        mCommandList->SetComputeRootSignature(mRsFFT.Get());
+        mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT["realSrc"], getWorkBufferSRV(0).hGpu);
+        mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT["imagSrc"], getWorkBufferSRV(1).hGpu);
+        mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT["realDst"], getWorkBufferUAV(2).hGpu);
+        mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT["imagDst"], getWorkBufferUAV(3).hGpu);
+        mCommandList->SetPipelineState(mInvFFT_colPSO.Get());
+        Dispatch(1, EXECUTE_SIZE, L"invFFT_col");
+
+        std::vector<CD3DX12_RESOURCE_BARRIER> uavBarrier2;
+        uavBarrier2.emplace_back(CD3DX12_RESOURCE_BARRIER::UAV(mWorkBufferTbl[2].Get()));
+        uavBarrier2.emplace_back(CD3DX12_RESOURCE_BARRIER::UAV(mWorkBufferTbl[3].Get()));
+        mCommandList->ResourceBarrier(u32(uavBarrier2.size()), uavBarrier2.data());
+
+        mCommandList->SetComputeRootSignature(mRsFFT_Adjust.Get());
+        mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT_Adjust["real"], getWorkBufferUAV(2).hGpu);
+        mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT_Adjust["imag"], getWorkBufferUAV(3).hGpu);
+        mCommandList->SetPipelineState(mFFT_AdjustPSO.Get());
+        Dispatch(EXECUTE_SIZE / NORMAL_THREAD_SIZE, EXECUTE_SIZE / NORMAL_THREAD_SIZE, L"FFT_Adjust");
+
+        //Result 2: Intensity 3: Phase 0: SourceField
+        {
+            mCommandList->SetComputeRootSignature(mRsComplexIntensity.Get());
+            mCommandList->SetComputeRootDescriptorTable(mRegisterMapComplexIntensity["real"], getWorkBufferSRV(2).hGpu);
+            mCommandList->SetComputeRootDescriptorTable(mRegisterMapComplexIntensity["imag"], getWorkBufferSRV(3).hGpu);
+            mCommandList->SetComputeRootDescriptorTable(mRegisterMapComplexIntensity["intensity"], getWorkBufferUAV(0).hGpu);
+            mCommandList->SetPipelineState(mComplexIntensityPSO.Get());
+            Dispatch(EXECUTE_SIZE / NORMAL_THREAD_SIZE, EXECUTE_SIZE / NORMAL_THREAD_SIZE, L"ComplexIntensity");
+
+            mCommandList->SetComputeRootSignature(mRsCompositeIntensity.Get());
+            mCommandList->SetComputeRootConstantBufferView(mRegisterMapCompositeIntensity["constantBuffer"], mCompositeIntensityCBTbl[i].Get()->GetGPUVirtualAddress());
+            mCommandList->SetComputeRootDescriptorTable(mRegisterMapCompositeIntensity["intensitySrc"], getWorkBufferSRV(0).hGpu);
+            mCommandList->SetComputeRootDescriptorTable(mRegisterMapCompositeIntensity["intensityDst"], getFullColorIntensityUAV().hGpu);
+            mCommandList->SetPipelineState(mCompositeIntensityPSO.Get());
+            Dispatch(EXECUTE_SIZE / NORMAL_THREAD_SIZE, EXECUTE_SIZE / NORMAL_THREAD_SIZE, L"CompositeIntensity");
+
+            mCommandList->SetComputeRootSignature(mRsComplexPhase.Get());
+            mCommandList->SetComputeRootDescriptorTable(mRegisterMapComplexPhase["real"], getWorkBufferSRV(2).hGpu);
+            mCommandList->SetComputeRootDescriptorTable(mRegisterMapComplexPhase["imag"], getWorkBufferSRV(3).hGpu);
+            mCommandList->SetComputeRootDescriptorTable(mRegisterMapComplexPhase["phase"], getWorkBufferUAV(1).hGpu);
+            mCommandList->SetPipelineState(mComplexPhasePSO.Get());
+            Dispatch(EXECUTE_SIZE / NORMAL_THREAD_SIZE, EXECUTE_SIZE / NORMAL_THREAD_SIZE, L"ComplexPhase");
+
+            mCommandList->SetComputeRootSignature(mRsDrawPolygon.Get());
+            mCommandList->SetComputeRootConstantBufferView(mRegisterMapDrawPolygon["constantBuffer"], mDrawPolygonCB.Get()->GetGPUVirtualAddress());
+            mCommandList->SetComputeRootDescriptorTable(mRegisterMapDrawPolygon["polygon"], getWorkBufferUAV(2).hGpu);
+            mCommandList->SetPipelineState(mDrawPolygonPSO.Get());
+            Dispatch(EXECUTE_SIZE / NORMAL_THREAD_SIZE, EXECUTE_SIZE / NORMAL_THREAD_SIZE, L"DrawPolygon");
+        }
+    }//波長ループ終了
+
     mCommandList->SetComputeRootSignature(mRsConstructResult.Get());
-    mCommandList->SetComputeRootDescriptorTable(mRegisterMapConstructResult["sourceField"], mWorkSRVTbl[2].hGpu);
-    mCommandList->SetComputeRootDescriptorTable(mRegisterMapConstructResult["intensity"], mWorkSRVTbl[0].hGpu);
-    mCommandList->SetComputeRootDescriptorTable(mRegisterMapConstructResult["phase"], mWorkSRVTbl[1].hGpu);
-    mCommandList->SetComputeRootDescriptorTable(mRegisterMapConstructResult["resultF4"], mResultUAV.hGpu);
+    mCommandList->SetComputeRootDescriptorTable(mRegisterMapConstructResult["sourceField"], getWorkBufferSRV(2).hGpu);
+    mCommandList->SetComputeRootDescriptorTable(mRegisterMapConstructResult["intensity"], getFullColorIntensitySRV().hGpu);
+    mCommandList->SetComputeRootDescriptorTable(mRegisterMapConstructResult["phase"], getWorkBufferSRV(1).hGpu);
+    mCommandList->SetComputeRootDescriptorTable(mRegisterMapConstructResult["resultF4"], getResultBufferUAV().hGpu);
     mCommandList->SetPipelineState(mConstructResultPSO.Get());
     Dispatch(GetWidth() / NORMAL_THREAD_SIZE, GetHeight() / NORMAL_THREAD_SIZE, L"ConstructResult");
 }

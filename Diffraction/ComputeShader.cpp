@@ -57,6 +57,14 @@ void Diffraction::CreateComputeRootSignatureAndPSO()
 
     {
         utility::RootSignatureCreater rsCreater;
+        rsCreater.Push(utility::RootSignatureCreater::RangeType::UAV, 0);
+        mRegisterMapClearFloat["tex"] = 0;
+        mRsClearFloat4 = rsCreater.Create(mDevice, false, L"rsClearFloat4");
+        CreateComputeShaderStateObject(ComputeShaders::ClearFloat4, mClearFloat4PSO, mRsClearFloat4);
+    }
+
+    {
+        utility::RootSignatureCreater rsCreater;
         rsCreater.Push(utility::RootSignatureCreater::RootType::CBV, 0);
         rsCreater.Push(utility::RootSignatureCreater::RangeType::UAV, 0);
         mRegisterMapDrawPolygon["constantBuffer"] = 0;
@@ -191,5 +199,17 @@ void Diffraction::CreateComputeRootSignatureAndPSO()
         mRegisterMapRotateInFourierSpace["imagDst"] = 4;
         mRsRotateInFourierSpace = rsCreater.Create(mDevice, false, L"rsRotateInFourierSpace");
         CreateComputeShaderStateObject(ComputeShaders::RotateInFourierSpace, mRotateInFourierSpacePSO, mRsRotateInFourierSpace);
+    }
+
+    {
+        utility::RootSignatureCreater rsCreater;
+        rsCreater.Push(utility::RootSignatureCreater::RootType::CBV, 0);
+        rsCreater.Push(utility::RootSignatureCreater::RangeType::SRV, 0);
+        rsCreater.Push(utility::RootSignatureCreater::RangeType::UAV, 0);
+        mRegisterMapCompositeIntensity["constantBuffer"] = 0;
+        mRegisterMapCompositeIntensity["intensitySrc"] = 1;
+        mRegisterMapCompositeIntensity["intensityDst"] = 2;
+        mRsCompositeIntensity = rsCreater.Create(mDevice, false, L"rsCompositeIntensity");
+        CreateComputeShaderStateObject(ComputeShaders::CompositeIntensity, mCompositeIntensityPSO, mRsCompositeIntensity);
     }
 }

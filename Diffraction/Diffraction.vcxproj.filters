@@ -133,6 +133,12 @@
     <FxCompile Include="shaders\rotateInFourierSpace.hlsl">
       <Filter>ソース ファイル\shaders</Filter>
     </FxCompile>
+    <FxCompile Include="shaders\compositeIntensity.hlsl">
+      <Filter>ソース ファイル\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\clearFloat4.hlsl">
+      <Filter>ソース ファイル\shaders</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="diffraction.rc">

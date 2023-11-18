@@ -22,8 +22,14 @@
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
 
+#define LANBDA_INF_NM 770
+#define LAMBDA_VIO_NM 380
+#define LAMBDA_NUM 20
+#define LAMBDA_STEP (LANBDA_INF_NM - LAMBDA_VIO_NM) / LAMBDA_NUM
+
 namespace ComputeShaders {
     const LPCWSTR ClearFloat = L"clearFloat.cso";
+    const LPCWSTR ClearFloat4 = L"clearFloat4.cso";
     const LPCWSTR DrawPolygon = L"drawPolygon.cso";
     const LPCWSTR GenerateFRF = L"frequencyResponseFunction.cso";
     const LPCWSTR Multiply = L"multiply.cso";
@@ -38,6 +44,7 @@ namespace ComputeShaders {
     const LPCWSTR Float1toFloat4 = L"float1tofloat4.cso";
     const LPCWSTR ConstructResult = L"constructResult.cso";
     const LPCWSTR RotateInFourierSpace = L"rotateInFourierSpace.cso";
+    const LPCWSTR CompositeIntensity = L"compositeIntensity.cso";
 }
 
 template<class T>
@@ -84,6 +91,14 @@ private:
         f32 wavelength = 633e-9f;
     };
 
+    struct CompositeIntensityParam
+    {
+        f32 wavelengthNM;
+        f32 wavelengthNum = LAMBDA_NUM;
+        f32 reserved0 = 0;
+        f32 reserved1 = 0;
+    };
+
     void Dispatch(const u32 x, const u32 y, const std::wstring cmdName);
 
     void CreateComputeRootSignatureAndPSO();
@@ -98,6 +113,18 @@ private:
 
     void UpdateWorkState(const D3D12_RESOURCE_STATES dst, const u32 idx = 0);
     void UpdateResultState(const D3D12_RESOURCE_STATES dst);
+
+    dx12::Descriptor getWorkBufferSRV(const u32 idx);
+    dx12::Descriptor getWorkBufferUAV(const u32 idx);
+    ComPtr<ID3D12Resource> getWorkBufferSRC(const u32 idx);
+    ComPtr<ID3D12Resource> getWorkBufferDST(const u32 idx);
+    dx12::Descriptor getInputSpectrumSRV(const u32 idx);
+    dx12::Descriptor getInputSpectrumUAV(const u32 idx);
+    ComPtr<ID3D12Resource> getInputSpectrumDST(const u32 idx);
+    dx12::Descriptor getResultBufferSRV();
+    dx12::Descriptor getResultBufferUAV();
+    dx12::Descriptor getFullColorIntensitySRV();
+    dx12::Descriptor getFullColorIntensityUAV();
 
     void BandLimitedASMProp();
     void PreProcess();
@@ -117,10 +144,13 @@ private:
     ComPtr<ID3D12Resource> mDrawPolygonCB;
 
     GenerateFRFParam mGenerateFRFParam;
-    ComPtr<ID3D12Resource> mGenerateFRFCB;
+    ComPtr<ID3D12Resource> mGenerateFRFCBTbl[LAMBDA_NUM];
 
     RotationInFourierSpaceParam mRotateInFourierParam;
-    ComPtr<ID3D12Resource> mRotateInFourierCB;
+    ComPtr<ID3D12Resource> mRotateInFourierCBTbl[LAMBDA_NUM];
+
+    CompositeIntensityParam mCompositeIntensityParam;
+    ComPtr<ID3D12Resource> mCompositeIntensityCBTbl[LAMBDA_NUM];
 
     //workbuffer
     ComPtr <ID3D12Resource> mWorkBufferTbl[WORK_BUFFER_SIZE];
@@ -134,10 +164,26 @@ private:
     dx12::Descriptor mResultSRV;
     D3D12_RESOURCE_STATES mResultState;
 
+    //input spectrum
+    ComPtr <ID3D12Resource> mInputSpectrumBufferTbl[2];
+    dx12::Descriptor mInputSpectrumUAVTbl[2];
+    dx12::Descriptor mInputSpectrumSRVTbl[2];
+    D3D12_RESOURCE_STATES mInputSpectrumStateTbl[2];
+
+    //full color intensity
+    ComPtr <ID3D12Resource> mFullColorIntensityBuffer;
+    dx12::Descriptor mFullColorIntensityUAV;
+    dx12::Descriptor mFullColorIntensitySRV;
+    D3D12_RESOURCE_STATES mFullColorIntensityState;
+
     //Pipeline State
     ComPtr<ID3D12RootSignature> mRsClearFloat;
     ComPtr<ID3D12PipelineState> mClearFloatPSO;
     std::unordered_map < std::string, u32> mRegisterMapClearFloat;
+
+    ComPtr<ID3D12RootSignature> mRsClearFloat4;
+    ComPtr<ID3D12PipelineState> mClearFloat4PSO;
+    std::unordered_map < std::string, u32> mRegisterMapClearFloat4;
 
     ComPtr<ID3D12RootSignature> mRsDrawPolygon;
     ComPtr<ID3D12PipelineState> mDrawPolygonPSO;
@@ -185,6 +231,10 @@ private:
     ComPtr<ID3D12RootSignature> mRsRotateInFourierSpace;
     ComPtr<ID3D12PipelineState> mRotateInFourierSpacePSO;
     std::unordered_map < std::string, u32> mRegisterMapRotateInFourierSpace;
+
+    ComPtr<ID3D12RootSignature> mRsCompositeIntensity;
+    ComPtr<ID3D12PipelineState> mCompositeIntensityPSO;
+    std::unordered_map < std::string, u32> mRegisterMapCompositeIntensity;
 
     std::wstring mAssetPath;
 
