@@ -47,6 +47,17 @@ static float3 XYZ380to770_10nmTbl[LAMBDA_NUM] =
     float3(0.0001, 0, 0)
 };
 
+float3 sumXYZ()
+{
+    int i = 0;
+    float3 sum = 0.xxx;
+    for (i = 0; i < LAMBDA_NUM; i++)
+    {
+        sum += XYZ380to770_10nmTbl[i];
+    }
+    return sum;
+}
+
 #define X_integrated 5.48
 #define Y_integrated 5.52
 #define Z_integrated 5.45
@@ -79,5 +90,5 @@ void compositeIntensity(uint2 dtid : SV_DispatchThreadID)
     float intensity = intensitySrc[dtid];
     float3 XYZ = lambdatoXYZ(constantBuffer.wavelengthNM);
     float3 result = XYZ * intensity;
-    intensityDst[dtid].rgb += result / float3(X_integrated, Y_integrated, Z_integrated);
+    intensityDst[dtid].rgb += result / sumXYZ().yyy;
 }

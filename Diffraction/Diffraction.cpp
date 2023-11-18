@@ -210,7 +210,7 @@ void Diffraction::OnKeyDown(UINT8 wparam)
         mDrawPolygonParam.ratio = Clamp(0.01, 0.5, mDrawPolygonParam.ratio + (mIsReverseMode ? -0.001 : 0.001));
         break;
     case 'P':
-        mGenerateFRFParam.propagateDistance = Clamp(-0.05, 0.05, mGenerateFRFParam.propagateDistance + (mIsReverseMode ? -0.000001 : 0.000001));
+        mGenerateFRFParam.propagateDistance = Clamp(0.00001, 0.05, mGenerateFRFParam.propagateDistance + (mIsReverseMode ? -0.000001 : 0.000001));
         break;
     case 'X':
         mRotateInFourierParam.degX = Clamp(-85, 85, mRotateInFourierParam.degX + (mIsReverseMode ? - 1 : 1));
@@ -414,16 +414,16 @@ void Diffraction::BandLimitedASMProp()
         mCommandList->SetPipelineState(mInvFFT_colPSO.Get());
         Dispatch(1, EXECUTE_SIZE, L"invFFT_col");
 
-        std::vector<CD3DX12_RESOURCE_BARRIER> uavBarrier2;
+ /*       std::vector<CD3DX12_RESOURCE_BARRIER> uavBarrier2;
         uavBarrier2.emplace_back(CD3DX12_RESOURCE_BARRIER::UAV(mWorkBufferTbl[2].Get()));
         uavBarrier2.emplace_back(CD3DX12_RESOURCE_BARRIER::UAV(mWorkBufferTbl[3].Get()));
-        mCommandList->ResourceBarrier(u32(uavBarrier2.size()), uavBarrier2.data());
+        mCommandList->ResourceBarrier(u32(uavBarrier2.size()), uavBarrier2.data());*/
 
-        mCommandList->SetComputeRootSignature(mRsFFT_Adjust.Get());
-        mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT_Adjust["real"], getWorkBufferUAV(2).hGpu);
-        mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT_Adjust["imag"], getWorkBufferUAV(3).hGpu);
-        mCommandList->SetPipelineState(mFFT_AdjustPSO.Get());
-        Dispatch(EXECUTE_SIZE / NORMAL_THREAD_SIZE, EXECUTE_SIZE / NORMAL_THREAD_SIZE, L"FFT_Adjust");
+        //mCommandList->SetComputeRootSignature(mRsFFT_Adjust.Get());
+        //mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT_Adjust["real"], getWorkBufferUAV(2).hGpu);
+        //mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT_Adjust["imag"], getWorkBufferUAV(3).hGpu);
+        //mCommandList->SetPipelineState(mFFT_AdjustPSO.Get());
+        //Dispatch(EXECUTE_SIZE / NORMAL_THREAD_SIZE, EXECUTE_SIZE / NORMAL_THREAD_SIZE, L"FFT_Adjust");
 
         //Result 2: Intensity 3: Phase 0: SourceField
         {

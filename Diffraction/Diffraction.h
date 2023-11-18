@@ -77,7 +77,7 @@ private:
 
     struct GenerateFRFParam
     {
-        f32 propagateDistance = 0;
+        f32 propagateDistance = 0.00001;
         f32 samplingIntervalRealX = 1e-6f;
         f32 samplingIntervalRealY = 1e-6f;
         f32 wavelength = 633e-9f;
