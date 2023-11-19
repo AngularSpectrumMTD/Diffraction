@@ -349,11 +349,9 @@ void Diffraction::BandLimitedASMProp()
     mCommandList->SetPipelineState(mFFT_colPSO.Get());
     Dispatch(1, EXECUTE_SIZE, L"FFT_col");
 
-    //この時点の周波数スペクトルは波長に依存しないので保持
     mCommandList->CopyResource(getInputSpectrumDST(0).Get(), getWorkBufferSRC(0).Get());
     mCommandList->CopyResource(getInputSpectrumDST(1).Get(), getWorkBufferSRC(1).Get());
 
-    //波長ループ開始
     for (u32 i = 0; i < LAMBDA_NUM; i++)
     {
         const f32 lambdaNM = LAMBDA_VIO_NM + i * LAMBDA_STEP;
@@ -414,17 +412,6 @@ void Diffraction::BandLimitedASMProp()
         mCommandList->SetPipelineState(mInvFFT_colPSO.Get());
         Dispatch(1, EXECUTE_SIZE, L"invFFT_col");
 
- /*       std::vector<CD3DX12_RESOURCE_BARRIER> uavBarrier2;
-        uavBarrier2.emplace_back(CD3DX12_RESOURCE_BARRIER::UAV(mWorkBufferTbl[2].Get()));
-        uavBarrier2.emplace_back(CD3DX12_RESOURCE_BARRIER::UAV(mWorkBufferTbl[3].Get()));
-        mCommandList->ResourceBarrier(u32(uavBarrier2.size()), uavBarrier2.data());*/
-
-        //mCommandList->SetComputeRootSignature(mRsFFT_Adjust.Get());
-        //mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT_Adjust["real"], getWorkBufferUAV(2).hGpu);
-        //mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT_Adjust["imag"], getWorkBufferUAV(3).hGpu);
-        //mCommandList->SetPipelineState(mFFT_AdjustPSO.Get());
-        //Dispatch(EXECUTE_SIZE / NORMAL_THREAD_SIZE, EXECUTE_SIZE / NORMAL_THREAD_SIZE, L"FFT_Adjust");
-
         //Result 2: Intensity 3: Phase 0: SourceField
         {
             mCommandList->SetComputeRootSignature(mRsComplexIntensity.Get());
@@ -454,7 +441,7 @@ void Diffraction::BandLimitedASMProp()
             mCommandList->SetPipelineState(mDrawPolygonPSO.Get());
             Dispatch(EXECUTE_SIZE / NORMAL_THREAD_SIZE, EXECUTE_SIZE / NORMAL_THREAD_SIZE, L"DrawPolygon");
         }
-    }//波長ループ終了
+    }
 
     mCommandList->SetComputeRootSignature(mRsConstructResult.Get());
     mCommandList->SetComputeRootDescriptorTable(mRegisterMapConstructResult["sourceField"], getWorkBufferSRV(2).hGpu);
