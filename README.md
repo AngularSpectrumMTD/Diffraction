@@ -3,6 +3,9 @@ Real-time Optical Diffraction Simulation by use of Angular Spectrum Method
 
 ![all](https://github.com/AngularSpectrumMTD/Diffraction/assets/65929274/c13a382b-3e2e-463f-8985-f9d844ae0563)
 
+### Definition of coordinate system
+![coordinate](https://github.com/AngularSpectrumMTD/Diffraction/assets/65929274/1b4078dd-cd39-4e2b-87cf-db17655eb946)
+
 ### Algorithm
 Band-Limited Angular Spectrum
 
