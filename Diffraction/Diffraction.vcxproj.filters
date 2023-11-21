@@ -139,6 +139,9 @@
     <FxCompile Include="shaders\clearFloat4.hlsl">
       <Filter>ソース ファイル\shaders</Filter>
     </FxCompile>
+    <FxCompile Include="shaders\multiplyQuadraticPhase.hlsl">
+      <Filter>ソース ファイル\shaders</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="diffraction.rc">

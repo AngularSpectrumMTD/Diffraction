@@ -27,6 +27,10 @@
 #define LAMBDA_NUM 20
 #define LAMBDA_STEP (LANBDA_INF_NM - LAMBDA_VIO_NM) / LAMBDA_NUM
 
+#define UNIT_MM 1e-3
+#define UNIT_UM 1e-6
+#define UNIT_NM 1e-9
+
 namespace ComputeShaders {
     const LPCWSTR ClearFloat = L"clearFloat.cso";
     const LPCWSTR ClearFloat4 = L"clearFloat4.cso";
@@ -45,6 +49,7 @@ namespace ComputeShaders {
     const LPCWSTR ConstructResult = L"constructResult.cso";
     const LPCWSTR RotateInFourierSpace = L"rotateInFourierSpace.cso";
     const LPCWSTR CompositeIntensity = L"compositeIntensity.cso";
+    const LPCWSTR MultiplyQuadraticPhase = L"multiplyQuadraticPhase.cso";
 }
 
 template<class T>
@@ -78,9 +83,9 @@ private:
     struct GenerateFRFParam
     {
         f32 propagateDistance = 0.00001;
-        f32 samplingIntervalRealX = 1e-6f;
-        f32 samplingIntervalRealY = 1e-6f;
-        f32 wavelength = 633e-9f;
+        f32 samplingIntervalRealX = UNIT_UM;
+        f32 samplingIntervalRealY = UNIT_UM;
+        f32 wavelength = 633 * UNIT_NM;
     };
 
     struct RotationInFourierSpaceParam
@@ -88,7 +93,7 @@ private:
         f32 degX = 0;
         f32 degY = 0;
         f32 degZ = 0;
-        f32 wavelength = 633e-9f;
+        f32 wavelength = 633 * UNIT_NM;
     };
 
     struct CompositeIntensityParam
@@ -97,6 +102,18 @@ private:
         f32 wavelengthNum = LAMBDA_NUM;
         f32 reserved0 = 0;
         f32 reserved1 = 0;
+    };
+
+    struct QuadraticParam
+    {
+        f32 focalLensgth = 1 * UNIT_MM;
+        f32 isBiConcave  = 1;
+        f32 wavelength = 633 * UNIT_NM;
+        f32 samplingIntervalRealX = UNIT_UM;
+        f32 samplingIntervalRealY = UNIT_UM;
+        f32 reserved0;
+        f32 reserved1;
+        f32 reserved2;
     };
 
     void Dispatch(const u32 x, const u32 y, const std::wstring cmdName);
@@ -142,6 +159,9 @@ private:
     //ConstantBuffers
     DrawPolygonParam mDrawPolygonParam;
     ComPtr<ID3D12Resource> mDrawPolygonCB;
+
+    QuadraticParam  mQuadraticParam;
+    ComPtr<ID3D12Resource> mQuadraticCB;
 
     GenerateFRFParam mGenerateFRFParam;
     ComPtr<ID3D12Resource> mGenerateFRFCBTbl[LAMBDA_NUM];
@@ -236,6 +256,10 @@ private:
     ComPtr<ID3D12PipelineState> mCompositeIntensityPSO;
     std::unordered_map < std::string, u32> mRegisterMapCompositeIntensity;
 
+    ComPtr<ID3D12RootSignature> mRsMultiplyQuadraticPhase;
+    ComPtr<ID3D12PipelineState> mMultiplyQuadraticPhasePSO;
+    std::unordered_map < std::string, u32> mRegisterMapMultiplyQuadraticPhase;
+
     std::wstring mAssetPath;
 
     LARGE_INTEGER mCpuFreq;
@@ -243,4 +267,6 @@ private:
     LARGE_INTEGER mEndTime;
 
     bool mIsReverseMode = false;
+    bool mIsUseLens = false;
+    bool mIsLensConcave = true;
 };

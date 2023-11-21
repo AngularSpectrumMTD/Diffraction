@@ -212,4 +212,16 @@ void Diffraction::CreateComputeRootSignatureAndPSO()
         mRsCompositeIntensity = rsCreater.Create(mDevice, false, L"rsCompositeIntensity");
         CreateComputeShaderStateObject(ComputeShaders::CompositeIntensity, mCompositeIntensityPSO, mRsCompositeIntensity);
     }
+
+    {
+        utility::RootSignatureCreater rsCreater;
+        rsCreater.Push(utility::RootSignatureCreater::RootType::CBV, 0);
+        rsCreater.Push(utility::RootSignatureCreater::RangeType::UAV, 0);
+        rsCreater.Push(utility::RootSignatureCreater::RangeType::UAV, 1);
+        mRegisterMapMultiplyQuadraticPhase["constantBuffer"] = 0;
+        mRegisterMapMultiplyQuadraticPhase["real"] = 1;
+        mRegisterMapMultiplyQuadraticPhase["imag"] = 2;
+        mRsMultiplyQuadraticPhase = rsCreater.Create(mDevice, false, L"rsMultiplyQuadraticPhase");
+        CreateComputeShaderStateObject(ComputeShaders::MultiplyQuadraticPhase, mMultiplyQuadraticPhasePSO, mRsMultiplyQuadraticPhase);
+    }
 }

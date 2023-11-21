@@ -188,7 +188,16 @@ void Diffraction::UpdateWindowText()
     f32 apertureRealSizeY = realSizeY * mDrawPolygonParam.ratio;
     f32 apertureRadius = sqrt(apertureRealSizeX * apertureRealSizeX + apertureRealSizeY * apertureRealSizeY);
 
-    windowText << L"       Mode (SPACE) : " << (mIsReverseMode ? L" ↓"  : L" ↑") << L"       PolygonAngle (A) : " << mDrawPolygonParam.N << L"       AngleX (X) [deg]: " << mRotateInFourierParam.degX << L"       AngleY (Y) [deg]: " << mRotateInFourierParam.degY << L"       AngleZ (Z) [deg]: " << mRotateInFourierParam.degZ << L"       Aperture Radius (R) [mm]: " << apertureRadius * 1000 << L"       Propagation Distance (P) [mm]: " << mGenerateFRFParam.propagateDistance * 1000;
+    windowText << L"  Mode (SPACE) : " << (mIsReverseMode ? L" ↓"  : L" ↑") <<
+        L"  Use Lens (L) : " << (mIsUseLens ? L" YES" : L" NO") <<
+        L"  Lens Type (C) : " << (mIsLensConcave ? L"()" : L")(") <<
+        L"  Focal Length (F) [mm]: " << mQuadraticParam.focalLensgth * 1000 <<
+        L"  Polygon Angle (A) : " << mDrawPolygonParam.N << 
+        L"  AngleX (X) [deg]: " << mRotateInFourierParam.degX << 
+        L"  AngleY (Y) [deg]: " << mRotateInFourierParam.degY << 
+        L"  AngleZ (Z) [deg]: " << mRotateInFourierParam.degZ << 
+        L"  Aperture Radius (R) [mm]: " << apertureRadius * 1000 << 
+        L"  Prop (P) [mm]: " << mGenerateFRFParam.propagateDistance * 1000;
 
     std::wstring finalWindowText = std::wstring(GetTitle()) + windowText.str().c_str();
     SetWindowText(AppInvoker::GetHWND(), finalWindowText.c_str());
@@ -210,7 +219,7 @@ void Diffraction::OnKeyDown(UINT8 wparam)
         mDrawPolygonParam.ratio = Clamp(0.01, 0.5, mDrawPolygonParam.ratio + (mIsReverseMode ? -0.001 : 0.001));
         break;
     case 'P':
-        mGenerateFRFParam.propagateDistance = Clamp(0.00001, 0.05, mGenerateFRFParam.propagateDistance + (mIsReverseMode ? -0.000001 : 0.000001));
+        mGenerateFRFParam.propagateDistance = Clamp(UNIT_UM, 50 * UNIT_MM, mGenerateFRFParam.propagateDistance + (mIsReverseMode ? -UNIT_UM : UNIT_UM));
         break;
     case 'X':
         mRotateInFourierParam.degX = Clamp(-85, 85, mRotateInFourierParam.degX + (mIsReverseMode ? - 1 : 1));
@@ -220,6 +229,16 @@ void Diffraction::OnKeyDown(UINT8 wparam)
         break;
     case 'Z':
         mRotateInFourierParam.degZ = Clamp(-85, 85, mRotateInFourierParam.degZ + (mIsReverseMode ? -1 : 1));
+        break;
+    case 'L':
+        mIsUseLens = !mIsUseLens;
+        break;
+    case 'C':
+        mIsLensConcave = !mIsLensConcave;
+        mQuadraticParam.isBiConcave = mIsLensConcave ? 1 : 0;
+        break;
+    case 'F':
+        mQuadraticParam.focusDistance = Clamp(0.01 * UNIT_MM, 5 * UNIT_MM, mQuadraticParam.focusDistance + (mIsReverseMode ? -0.1 * UNIT_MM : 0.1 * UNIT_MM));
         break;
     case VK_SPACE:
         mIsReverseMode = !mIsReverseMode;
@@ -252,6 +271,9 @@ void Diffraction::UpdateConstantBufferParams()
 {
     auto polygonConstantBuffer = mDrawPolygonCB.Get();
     mDevice->ImmediateBufferUpdateHostVisible(polygonConstantBuffer, &mDrawPolygonParam, sizeof(mDrawPolygonParam));
+
+    auto quadraticConstantBuffer = mQuadraticCB.Get();
+    mDevice->ImmediateBufferUpdateHostVisible(quadraticConstantBuffer, &mQuadraticParam, sizeof(mQuadraticParam));
 }
 
 void Diffraction::PreProcess()
@@ -332,6 +354,16 @@ void Diffraction::BandLimitedASMProp()
     mCommandList->SetComputeRootDescriptorTable(mRegisterMapDrawPolygon["polygon"], getWorkBufferUAV(0).hGpu);
     mCommandList->SetPipelineState(mDrawPolygonPSO.Get());
     Dispatch(EXECUTE_SIZE / NORMAL_THREAD_SIZE, EXECUTE_SIZE / NORMAL_THREAD_SIZE, L"DrawPolygon");
+
+    if (mIsUseLens)
+    {
+        mCommandList->SetComputeRootSignature(mRsMultiplyQuadraticPhase.Get());
+        mCommandList->SetComputeRootConstantBufferView(mRegisterMapMultiplyQuadraticPhase["constantBuffer"], mQuadraticCB.Get()->GetGPUVirtualAddress());
+        mCommandList->SetComputeRootDescriptorTable(mRegisterMapMultiplyQuadraticPhase["real"], getWorkBufferUAV(0).hGpu);
+        mCommandList->SetComputeRootDescriptorTable(mRegisterMapMultiplyQuadraticPhase["imag"], getWorkBufferUAV(1).hGpu);
+        mCommandList->SetPipelineState(mMultiplyQuadraticPhasePSO.Get());
+        Dispatch(EXECUTE_SIZE / NORMAL_THREAD_SIZE, EXECUTE_SIZE / NORMAL_THREAD_SIZE, L"MultiplyQuadraticPhase");
+    }
 
     mCommandList->SetComputeRootSignature(mRsFFT.Get());
     mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT["realSrc"], getWorkBufferSRV(0).hGpu);

@@ -111,6 +111,7 @@ void Diffraction::CreateRegularBuffer()
 void Diffraction::CreateConstantBuffer()
 {
     mDrawPolygonCB = mDevice->CreateConstantBuffer(sizeof(DrawPolygonParam), nullptr, L"DrawPolygonCB");
+    mQuadraticCB = mDevice->CreateConstantBuffer(sizeof(QuadraticParam), nullptr, L"QuadraticCB");
   
     for (u32 i = 0; i < LAMBDA_NUM; i++)
     {
