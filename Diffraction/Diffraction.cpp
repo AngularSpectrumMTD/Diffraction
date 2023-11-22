@@ -194,9 +194,10 @@ void Diffraction::UpdateWindowText()
         L"  Focal Length (F) [mm]: " << mQuadraticParam.focalLensgth * 1000 <<
         L"  Polygon Angle (A) : " << mDrawPolygonParam.N << 
         L"  AngleX (X) [deg]: " << mRotateInFourierParam.degX << 
-        L"  AngleY (Y) [deg]: " << mRotateInFourierParam.degY << 
-        L"  AngleZ (Z) [deg]: " << mRotateInFourierParam.degZ << 
+        L"  Y (Y) [deg]: " << mRotateInFourierParam.degY << 
+        L"  Z (Z) [deg]: " << mRotateInFourierParam.degZ << 
         L"  Aperture Radius (R) [mm]: " << apertureRadius * 1000 << 
+        L"  PropStep (D) [um]: " << mPropagateDelta * 1000000 <<
         L"  Prop (P) [mm]: " << mGenerateFRFParam.propagateDistance * 1000;
 
     std::wstring finalWindowText = std::wstring(GetTitle()) + windowText.str().c_str();
@@ -219,7 +220,10 @@ void Diffraction::OnKeyDown(UINT8 wparam)
         mDrawPolygonParam.ratio = Clamp(0.01, 0.5, mDrawPolygonParam.ratio + (mIsReverseMode ? -0.001 : 0.001));
         break;
     case 'P':
-        mGenerateFRFParam.propagateDistance = Clamp(UNIT_UM, 50 * UNIT_MM, mGenerateFRFParam.propagateDistance + (mIsReverseMode ? -UNIT_UM : UNIT_UM));
+        mGenerateFRFParam.propagateDistance = Clamp(UNIT_UM, 50 * UNIT_MM, mGenerateFRFParam.propagateDistance + (mIsReverseMode ? -mPropagateDelta : mPropagateDelta));
+        break;
+    case 'D':
+        mPropagateDelta = Clamp(0.1 * UNIT_UM, 5 * UNIT_MM, mPropagateDelta + (mIsReverseMode ? -0.1 * UNIT_UM : 0.1 * UNIT_UM));
         break;
     case 'X':
         mRotateInFourierParam.degX = Clamp(-85, 85, mRotateInFourierParam.degX + (mIsReverseMode ? - 1 : 1));
@@ -238,7 +242,7 @@ void Diffraction::OnKeyDown(UINT8 wparam)
         mQuadraticParam.isBiConcave = mIsLensConcave ? 1 : 0;
         break;
     case 'F':
-        mQuadraticParam.focusDistance = Clamp(0.01 * UNIT_MM, 5 * UNIT_MM, mQuadraticParam.focusDistance + (mIsReverseMode ? -0.1 * UNIT_MM : 0.1 * UNIT_MM));
+        mQuadraticParam.focalLensgth = Clamp(0.01 * UNIT_MM, 5 * UNIT_MM, mQuadraticParam.focalLensgth + (mIsReverseMode ? -0.1 * UNIT_MM : 0.1 * UNIT_MM));
         break;
     case VK_SPACE:
         mIsReverseMode = !mIsReverseMode;

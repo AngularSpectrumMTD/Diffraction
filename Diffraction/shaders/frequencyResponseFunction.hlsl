@@ -19,8 +19,8 @@ void generateFRF(uint2 dispatchThreadID : SV_DispatchThreadID)
     float2 size;
     imag.GetDimensions(size.x, size.y);
 
-    float samplingIntervalFourierU = 1.0f / constantBuffer.wavelength / size.x;
-    float samplingIntervalFourierV = 1.0f / constantBuffer.wavelength / size.y;
+    float samplingIntervalFourierU = 1.0f / constantBuffer.samplingIntervalRealX / size.x;
+    float samplingIntervalFourierV = 1.0f / constantBuffer.samplingIntervalRealY / size.y;
 
     float U_limit_helper = 2 * samplingIntervalFourierU * constantBuffer.propagateDistance;
     float U_limit = 1.0f / (constantBuffer.wavelength * sqrt(U_limit_helper * U_limit_helper + 1));

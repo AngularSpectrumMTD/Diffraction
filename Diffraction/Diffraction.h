@@ -266,6 +266,8 @@ private:
     LARGE_INTEGER mStartTime;
     LARGE_INTEGER mEndTime;
 
+    f32 mPropagateDelta = UNIT_UM;
+
     bool mIsReverseMode = false;
     bool mIsUseLens = false;
     bool mIsLensConcave = true;
