@@ -11,11 +11,11 @@ Rotational Transform(Diffraction on Tilted Planes)
 
 Bi-Convex/Bi-Concave Lens Effect(Located at Source Plane's Origin)
 
-<img src="https://github.com/AngularSpectrumMTD/Diffraction/assets/65929274/ac2fe890-9070-4d85-a748-29acceb0cbc2" width="50%">
+<img src="https://github.com/AngularSpectrumMTD/Diffraction/assets/65929274/af8c7fcd-97ce-405c-9ce8-f1f5a1b128b3" width="50%">
 
 Results
 
-<img src="https://github.com/AngularSpectrumMTD/Diffraction/assets/65929274/031572a9-b2ff-4e40-8513-e120c8c58e28" width="50%">
+<img src="https://github.com/AngularSpectrumMTD/Diffraction/assets/65929274/3d10bf8c-fd0a-4f6e-a89f-75cadb1cb199" width="50%">
 
 ### Definition of coordinate system
 <img src="https://github.com/AngularSpectrumMTD/Diffraction/assets/65929274/3d690174-c7ba-43cb-9ccb-bd2ab466b13b" width="50%">
