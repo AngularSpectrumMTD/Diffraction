@@ -34,11 +34,15 @@ void Diffraction::CreateWorkBuffer()
 {
     for (u32 i = 0; i < WORK_BUFFER_SIZE; i++)
     {
+        wchar_t name[30];
+        swprintf(name, 30, L"WorkBuffer[%d]", i);
+
         mWorkBufferTbl[i] = mDevice->CreateTexture2D(
             EXECUTE_SIZE, EXECUTE_SIZE, DXGI_FORMAT_R32_FLOAT,
             D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
             D3D12_RESOURCE_STATE_COPY_SOURCE,
-            D3D12_HEAP_TYPE_DEFAULT
+            D3D12_HEAP_TYPE_DEFAULT,
+            name
         );
 
         D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
@@ -58,11 +62,15 @@ void Diffraction::CreateWorkBuffer()
 
     for (u32 i = 0; i < 2; i++)
     {
+        wchar_t name[30];
+        swprintf(name, 30, L"InputSpectrumBuffer[%d]", i);
+
         mInputSpectrumBufferTbl[i] = mDevice->CreateTexture2D(
             EXECUTE_SIZE, EXECUTE_SIZE, DXGI_FORMAT_R32_FLOAT,
             D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
             D3D12_RESOURCE_STATE_COPY_SOURCE,
-            D3D12_HEAP_TYPE_DEFAULT
+            D3D12_HEAP_TYPE_DEFAULT,
+            name
         );
 
         D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};

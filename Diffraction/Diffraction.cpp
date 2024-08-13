@@ -46,6 +46,14 @@ void Diffraction::UpdateWorkState(const D3D12_RESOURCE_STATES dst, const u32 idx
         mCommandList->ResourceBarrier(1, &barrier);
         mWorkStateTbl[idx] = dst;
     }
+    else
+    {
+        if (dst == D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
+        {
+            auto barrier = CD3DX12_RESOURCE_BARRIER::UAV(mWorkBufferTbl[idx].Get());
+            mCommandList->ResourceBarrier(1, &barrier);
+        }
+    }
 }
 
 void Diffraction::UpdateResultState(const D3D12_RESOURCE_STATES dst)
@@ -377,16 +385,27 @@ void Diffraction::BandLimitedASMProp()
     mCommandList->SetPipelineState(mFFT_rowPSO.Get());
     Dispatch(1, EXECUTE_SIZE, L"FFT_row");
 
+    {
+        std::vector<CD3DX12_RESOURCE_BARRIER> uavBarrier;
+        uavBarrier.emplace_back(CD3DX12_RESOURCE_BARRIER::UAV(mWorkBufferTbl[2].Get()));
+        uavBarrier.emplace_back(CD3DX12_RESOURCE_BARRIER::UAV(mWorkBufferTbl[3].Get()));
+        mCommandList->ResourceBarrier(u32(uavBarrier.size()), uavBarrier.data());
+    }
+
     mCommandList->SetComputeRootSignature(mRsFFT.Get());
     mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT["realSrc"], getWorkBufferSRV(2).hGpu);
     mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT["imagSrc"], getWorkBufferSRV(3).hGpu);
-    mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT["realDst"], getWorkBufferUAV(0).hGpu);
-    mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT["imagDst"], getWorkBufferUAV(1).hGpu);
+    mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT["realDst"], getInputSpectrumUAV(0).hGpu);
+    mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT["imagDst"], getInputSpectrumUAV(1).hGpu);
     mCommandList->SetPipelineState(mFFT_colPSO.Get());
     Dispatch(1, EXECUTE_SIZE, L"FFT_col");
 
-    mCommandList->CopyResource(getInputSpectrumDST(0).Get(), getWorkBufferSRC(0).Get());
-    mCommandList->CopyResource(getInputSpectrumDST(1).Get(), getWorkBufferSRC(1).Get());
+    {
+        std::vector<CD3DX12_RESOURCE_BARRIER> uavBarrier;
+        uavBarrier.emplace_back(CD3DX12_RESOURCE_BARRIER::UAV(mWorkBufferTbl[0].Get()));
+        uavBarrier.emplace_back(CD3DX12_RESOURCE_BARRIER::UAV(mWorkBufferTbl[1].Get()));
+        mCommandList->ResourceBarrier(u32(uavBarrier.size()), uavBarrier.data());
+    }
 
     for (u32 i = 0; i < LAMBDA_NUM; i++)
     {
@@ -410,10 +429,12 @@ void Diffraction::BandLimitedASMProp()
         mCommandList->SetPipelineState(mGenerateFRFPSO.Get());
         Dispatch(EXECUTE_SIZE / NORMAL_THREAD_SIZE, EXECUTE_SIZE / NORMAL_THREAD_SIZE, L"GenerateFRF");
 
-        std::vector<CD3DX12_RESOURCE_BARRIER> uavBarrier1;
-        uavBarrier1.emplace_back(CD3DX12_RESOURCE_BARRIER::UAV(mWorkBufferTbl[0].Get()));
-        uavBarrier1.emplace_back(CD3DX12_RESOURCE_BARRIER::UAV(mWorkBufferTbl[1].Get()));
-        mCommandList->ResourceBarrier(u32(uavBarrier1.size()), uavBarrier1.data());
+        {
+            std::vector<CD3DX12_RESOURCE_BARRIER> uavBarrier;
+            uavBarrier.emplace_back(CD3DX12_RESOURCE_BARRIER::UAV(mWorkBufferTbl[0].Get()));
+            uavBarrier.emplace_back(CD3DX12_RESOURCE_BARRIER::UAV(mWorkBufferTbl[1].Get()));
+            mCommandList->ResourceBarrier(u32(uavBarrier.size()), uavBarrier.data());
+        }
 
         mCommandList->SetComputeRootSignature(mRsComplexMultiply.Get());
         mCommandList->SetComputeRootDescriptorTable(mRegisterMapComplexMultiply["real0"], getInputSpectrumSRV(0).hGpu);
@@ -422,6 +443,13 @@ void Diffraction::BandLimitedASMProp()
         mCommandList->SetComputeRootDescriptorTable(mRegisterMapComplexMultiply["imag1"], getWorkBufferUAV(1).hGpu);
         mCommandList->SetPipelineState(mComplexMultiplyPSO.Get());
         Dispatch(EXECUTE_SIZE / NORMAL_THREAD_SIZE, EXECUTE_SIZE / NORMAL_THREAD_SIZE, L"ComplexMultiply");
+
+        {
+            std::vector<CD3DX12_RESOURCE_BARRIER> uavBarrier;
+            uavBarrier.emplace_back(CD3DX12_RESOURCE_BARRIER::UAV(mWorkBufferTbl[0].Get()));
+            uavBarrier.emplace_back(CD3DX12_RESOURCE_BARRIER::UAV(mWorkBufferTbl[1].Get()));
+            mCommandList->ResourceBarrier(u32(uavBarrier.size()), uavBarrier.data());
+        }
 
         mCommandList->SetComputeRootSignature(mRsRotateInFourierSpace.Get());
         mCommandList->SetComputeRootConstantBufferView(mRegisterMapRotateInFourierSpace["constantBuffer"], mRotateInFourierCBTbl[i].Get()->GetGPUVirtualAddress());
@@ -432,6 +460,13 @@ void Diffraction::BandLimitedASMProp()
         mCommandList->SetPipelineState(mRotateInFourierSpacePSO.Get());
         Dispatch(EXECUTE_SIZE / NORMAL_THREAD_SIZE, EXECUTE_SIZE / NORMAL_THREAD_SIZE, L"RotateInFourierSpace");
 
+        {
+            std::vector<CD3DX12_RESOURCE_BARRIER> uavBarrier;
+            uavBarrier.emplace_back(CD3DX12_RESOURCE_BARRIER::UAV(mWorkBufferTbl[2].Get()));
+            uavBarrier.emplace_back(CD3DX12_RESOURCE_BARRIER::UAV(mWorkBufferTbl[3].Get()));
+            mCommandList->ResourceBarrier(u32(uavBarrier.size()), uavBarrier.data());
+        }
+
         mCommandList->SetComputeRootSignature(mRsFFT.Get());
         mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT["realSrc"], getWorkBufferSRV(2).hGpu);
         mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT["imagSrc"], getWorkBufferSRV(3).hGpu);
@@ -440,6 +475,13 @@ void Diffraction::BandLimitedASMProp()
         mCommandList->SetPipelineState(mInvFFT_rowPSO.Get());
         Dispatch(1, EXECUTE_SIZE, L"invFFT_row");
 
+        {
+            std::vector<CD3DX12_RESOURCE_BARRIER> uavBarrier;
+            uavBarrier.emplace_back(CD3DX12_RESOURCE_BARRIER::UAV(mWorkBufferTbl[0].Get()));
+            uavBarrier.emplace_back(CD3DX12_RESOURCE_BARRIER::UAV(mWorkBufferTbl[1].Get()));
+            mCommandList->ResourceBarrier(u32(uavBarrier.size()), uavBarrier.data());
+        }
+
         mCommandList->SetComputeRootSignature(mRsFFT.Get());
         mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT["realSrc"], getWorkBufferSRV(0).hGpu);
         mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT["imagSrc"], getWorkBufferSRV(1).hGpu);
@@ -447,6 +489,13 @@ void Diffraction::BandLimitedASMProp()
         mCommandList->SetComputeRootDescriptorTable(mRegisterMapFFT["imagDst"], getWorkBufferUAV(3).hGpu);
         mCommandList->SetPipelineState(mInvFFT_colPSO.Get());
         Dispatch(1, EXECUTE_SIZE, L"invFFT_col");
+
+        {
+            std::vector<CD3DX12_RESOURCE_BARRIER> uavBarrier;
+            uavBarrier.emplace_back(CD3DX12_RESOURCE_BARRIER::UAV(mWorkBufferTbl[2].Get()));
+            uavBarrier.emplace_back(CD3DX12_RESOURCE_BARRIER::UAV(mWorkBufferTbl[3].Get()));
+            mCommandList->ResourceBarrier(u32(uavBarrier.size()), uavBarrier.data());
+        }
 
         //Result 2: Intensity 3: Phase 0: SourceField
         {
