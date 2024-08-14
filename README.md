@@ -3,7 +3,7 @@ Real-time Optical Diffraction Simulation by use of Angular Spectrum Method
 
 Standard Diffraction
 
-<img src="https://github.com/user-attachments/assets/00654707-90fa-41ec-9366-afb5c6db70aa" width="50%">
+<img src="https://github.com/user-attachments/assets/b902acc4-7725-4fc2-82d5-44f295361b0e" width="50%">
 
 Rotational Transform(Diffraction on Tilted Planes)
 
