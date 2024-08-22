@@ -3,19 +3,19 @@ Real-time Optical Diffraction Simulation by use of Angular Spectrum Method
 
 Standard Diffraction
 
-<img src="https://github.com/user-attachments/assets/b902acc4-7725-4fc2-82d5-44f295361b0e" width="50%">
+<img src="https://github.com/user-attachments/assets/05864698-9223-4ba3-9f79-438fa55e4566" width="50%">
 
 Rotational Transform(Diffraction on Tilted Planes)
 
-<img src="https://github.com/AngularSpectrumMTD/Diffraction/assets/65929274/693ec750-6b46-4f52-9640-f9c75e9ea7a7" width="50%">
+<img src="https://github.com/user-attachments/assets/b189046b-8460-4e11-a837-33815d1e7e34" width="50%">
 
 Bi-Convex/Bi-Concave Lens Effect(Located at Source Plane's Origin)
 
-<img src="https://github.com/AngularSpectrumMTD/Diffraction/assets/65929274/af8c7fcd-97ce-405c-9ce8-f1f5a1b128b3" width="50%">
+<img src="https://github.com/user-attachments/assets/911dbc26-532c-420e-bd42-8e4f63fcf64e" width="50%">
 
 Results
 
-![all](https://github.com/user-attachments/assets/a219a667-3030-41cf-9991-fd53896f5213)
+<img src="https://github.com/user-attachments/assets/da9bd1d5-37ab-42f2-9dd4-cbdbc14eccbd" width="50%">
 
 ### Definition of coordinate system
 <img src="https://github.com/AngularSpectrumMTD/Diffraction/assets/65929274/3d690174-c7ba-43cb-9ccb-bd2ab466b13b" width="50%">
