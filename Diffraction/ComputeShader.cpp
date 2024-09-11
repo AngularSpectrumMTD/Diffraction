@@ -224,4 +224,14 @@ void Diffraction::CreateComputeRootSignatureAndPSO()
         mRsMultiplyQuadraticPhase = rsCreater.Create(mDevice, false, L"rsMultiplyQuadraticPhase");
         CreateComputeShaderStateObject(ComputeShaders::MultiplyQuadraticPhase, mMultiplyQuadraticPhasePSO, mRsMultiplyQuadraticPhase);
     }
+
+    {
+        utility::RootSignatureCreater rsCreater;
+        rsCreater.Push(utility::RootSignatureCreater::RangeType::SRV, 0);
+        rsCreater.Push(utility::RootSignatureCreater::RangeType::UAV, 0);
+        mRegisterMapAveragedOneElemCopy["texSRV"] = 0;
+        mRegisterMapAveragedOneElemCopy["texUAV"] = 1;
+        mRsAveragedOneElemCopy = rsCreater.Create(mDevice, false, L"rsAveragedOneElemCopy");
+        CreateComputeShaderStateObject(ComputeShaders::AveragedOneElemCopy, mAveragedOneElemCopyPSO, mRsAveragedOneElemCopy);
+    }
 }

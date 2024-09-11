@@ -50,6 +50,7 @@ namespace ComputeShaders {
     const LPCWSTR RotateInFourierSpace = L"rotateInFourierSpace.cso";
     const LPCWSTR CompositeIntensity = L"compositeIntensity.cso";
     const LPCWSTR MultiplyQuadraticPhase = L"multiplyQuadraticPhase.cso";
+    const LPCWSTR AveragedOneElemCopy = L"averagedOneElemCopy.cso";
 }
 
 template<class T>
@@ -151,7 +152,7 @@ private:
     std::wstring GetAssetFullPath(LPCWSTR assetName);
     f32 Clamp(f32 min, f32 max, f32 src);
     f32 getFrameRate();
-    utility::TextureResource LoadTextureFromFile(const std::wstring& fileName);
+    utility::TextureResource LoadTextureFromFile(const std::wstring& fileName, bool isNoException);
 
     ComPtr<ID3D12GraphicsCommandList4> mCommandList;
     static const u32 BackBufferCount = dx12::RenderDeviceDX12::BackBufferCount;
@@ -260,6 +261,10 @@ private:
     ComPtr<ID3D12PipelineState> mMultiplyQuadraticPhasePSO;
     std::unordered_map < std::string, u32> mRegisterMapMultiplyQuadraticPhase;
 
+    ComPtr<ID3D12RootSignature> mRsAveragedOneElemCopy;
+    ComPtr<ID3D12PipelineState> mAveragedOneElemCopyPSO;
+    std::unordered_map < std::string, u32> mRegisterMapAveragedOneElemCopy;
+
     std::wstring mAssetPath;
 
     LARGE_INTEGER mCpuFreq;
@@ -268,7 +273,12 @@ private:
 
     f32 mPropagateDelta = UNIT_UM;
 
+    //input user defined image
+    utility::TextureResource mUserDefinedImage;
+
     bool mIsReverseMode = false;
     bool mIsUseLens = false;
     bool mIsLensConcave = true;
+
+    u32 mRenderFrame = 0;
 };

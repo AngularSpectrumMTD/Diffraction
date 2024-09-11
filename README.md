@@ -1,6 +1,12 @@
 # Diffraction
 Real-time Optical Diffraction Simulation by use of Angular Spectrum Method
 
+If there is an image named input.png in the “image” folder, diffraction is performed with it as the aperture.
+
+Diffracted with SIGGRAPH icon  
+
+![siggraph](https://github.com/user-attachments/assets/9d17f42a-39fd-44ec-a5be-badae0f67c9b)
+
 Standard Diffraction
 
 <img src="https://github.com/user-attachments/assets/05864698-9223-4ba3-9f79-438fa55e4566" width="50%">

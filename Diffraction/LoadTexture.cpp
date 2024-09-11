@@ -2,7 +2,7 @@
 #include <DirectXTex.h>
 using namespace DirectX;
 
-utility::TextureResource Diffraction::LoadTextureFromFile(const std::wstring& fileName)
+utility::TextureResource Diffraction::LoadTextureFromFile(const std::wstring& fileName, bool isNoExeption)
 {
     DirectX::TexMetadata metadata;
     DirectX::ScratchImage image;
@@ -19,6 +19,20 @@ utility::TextureResource Diffraction::LoadTextureFromFile(const std::wstring& fi
     }
     if (std::equal(std::rbegin(extPNG), std::rend(extPNG), std::rbegin(fileName))) {
         hr = LoadFromWICFile(fileName.c_str(), WIC_FLAGS_NONE, &metadata, image);
+    }
+
+    if (hr == E_FAIL)
+    {
+        OutputDebugString(L"Texture Load Missed.\n");
+        if (!isNoExeption)
+        {
+            throw std::runtime_error("Texture Load Missed.");
+        }
+        else
+        {
+            utility::TextureResource nullRes;
+            return nullRes;
+        }
     }
 
     ComPtr<ID3D12Resource> texRes;

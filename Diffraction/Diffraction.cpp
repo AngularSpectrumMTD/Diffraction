@@ -178,6 +178,8 @@ void Diffraction::Initialize()
     {
         throw std::runtime_error("Failed CoInitializeEx.");
     }
+
+    mUserDefinedImage = LoadTextureFromFile(L"image/input.png", true);//we cannot use the name "image" to texture
 }
 
 void Diffraction::Terminate()
@@ -344,6 +346,13 @@ f32 Diffraction::getFrameRate()
 
 void Diffraction::BandLimitedASMProp()
 {
+    if (mRenderFrame == 0)
+    {
+        auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(mUserDefinedImage.res.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, STATE_SRV);
+        mCommandList->ResourceBarrier(1, &barrier);
+    }
+    mRenderFrame++;
+
     for (u32 i = 0; i < WORK_BUFFER_SIZE; i++)
     {
         mCommandList->SetComputeRootSignature(mRsClearFloat.Get());
@@ -361,11 +370,22 @@ void Diffraction::BandLimitedASMProp()
     uavBarrier0.emplace_back(CD3DX12_RESOURCE_BARRIER::UAV(mWorkBufferTbl[0].Get()));
     mCommandList->ResourceBarrier(u32(uavBarrier0.size()), uavBarrier0.data());
 
-    mCommandList->SetComputeRootSignature(mRsDrawPolygon.Get());
-    mCommandList->SetComputeRootConstantBufferView(mRegisterMapDrawPolygon["constantBuffer"], mDrawPolygonCB.Get()->GetGPUVirtualAddress());
-    mCommandList->SetComputeRootDescriptorTable(mRegisterMapDrawPolygon["polygon"], getWorkBufferUAV(0).hGpu);
-    mCommandList->SetPipelineState(mDrawPolygonPSO.Get());
-    Dispatch(EXECUTE_SIZE / NORMAL_THREAD_SIZE, EXECUTE_SIZE / NORMAL_THREAD_SIZE, L"DrawPolygon");
+    if (mUserDefinedImage.res != nullptr)
+    {
+        mCommandList->SetComputeRootSignature(mRsAveragedOneElemCopy.Get());
+        mCommandList->SetComputeRootDescriptorTable(mRegisterMapAveragedOneElemCopy["texSRV"], mUserDefinedImage.srv.hGpu);
+        mCommandList->SetComputeRootDescriptorTable(mRegisterMapAveragedOneElemCopy["texUAV"], getWorkBufferUAV(0).hGpu);
+        mCommandList->SetPipelineState(mAveragedOneElemCopyPSO.Get());
+        Dispatch(EXECUTE_SIZE / NORMAL_THREAD_SIZE, EXECUTE_SIZE / NORMAL_THREAD_SIZE, L"AveragedOneElemCopy");
+    }
+    else
+    {
+        mCommandList->SetComputeRootSignature(mRsDrawPolygon.Get());
+        mCommandList->SetComputeRootConstantBufferView(mRegisterMapDrawPolygon["constantBuffer"], mDrawPolygonCB.Get()->GetGPUVirtualAddress());
+        mCommandList->SetComputeRootDescriptorTable(mRegisterMapDrawPolygon["polygon"], getWorkBufferUAV(0).hGpu);
+        mCommandList->SetPipelineState(mDrawPolygonPSO.Get());
+        Dispatch(EXECUTE_SIZE / NORMAL_THREAD_SIZE, EXECUTE_SIZE / NORMAL_THREAD_SIZE, L"DrawPolygon");
+    }
 
     if (mIsUseLens)
     {
@@ -520,11 +540,22 @@ void Diffraction::BandLimitedASMProp()
             mCommandList->SetPipelineState(mComplexPhasePSO.Get());
             Dispatch(EXECUTE_SIZE / NORMAL_THREAD_SIZE, EXECUTE_SIZE / NORMAL_THREAD_SIZE, L"ComplexPhase");
 
-            mCommandList->SetComputeRootSignature(mRsDrawPolygon.Get());
-            mCommandList->SetComputeRootConstantBufferView(mRegisterMapDrawPolygon["constantBuffer"], mDrawPolygonCB.Get()->GetGPUVirtualAddress());
-            mCommandList->SetComputeRootDescriptorTable(mRegisterMapDrawPolygon["polygon"], getWorkBufferUAV(2).hGpu);
-            mCommandList->SetPipelineState(mDrawPolygonPSO.Get());
-            Dispatch(EXECUTE_SIZE / NORMAL_THREAD_SIZE, EXECUTE_SIZE / NORMAL_THREAD_SIZE, L"DrawPolygon");
+            if (mUserDefinedImage.res != nullptr)
+            {
+                mCommandList->SetComputeRootSignature(mRsAveragedOneElemCopy.Get());
+                mCommandList->SetComputeRootDescriptorTable(mRegisterMapAveragedOneElemCopy["texSRV"], mUserDefinedImage.srv.hGpu);
+                mCommandList->SetComputeRootDescriptorTable(mRegisterMapAveragedOneElemCopy["texUAV"], getWorkBufferUAV(2).hGpu);
+                mCommandList->SetPipelineState(mAveragedOneElemCopyPSO.Get());
+                Dispatch(EXECUTE_SIZE / NORMAL_THREAD_SIZE, EXECUTE_SIZE / NORMAL_THREAD_SIZE, L"AveragedOneElemCopy");
+            }
+            else
+            {
+                mCommandList->SetComputeRootSignature(mRsDrawPolygon.Get());
+                mCommandList->SetComputeRootConstantBufferView(mRegisterMapDrawPolygon["constantBuffer"], mDrawPolygonCB.Get()->GetGPUVirtualAddress());
+                mCommandList->SetComputeRootDescriptorTable(mRegisterMapDrawPolygon["polygon"], getWorkBufferUAV(2).hGpu);
+                mCommandList->SetPipelineState(mDrawPolygonPSO.Get());
+                Dispatch(EXECUTE_SIZE / NORMAL_THREAD_SIZE, EXECUTE_SIZE / NORMAL_THREAD_SIZE, L"DrawPolygon");
+            }
         }
     }
 

@@ -142,6 +142,9 @@
     <FxCompile Include="shaders\multiplyQuadraticPhase.hlsl">
       <Filter>ソース ファイル\shaders</Filter>
     </FxCompile>
+    <FxCompile Include="shaders\averagedOneElemCopy.hlsl">
+      <Filter>ソース ファイル\shaders</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="diffraction.rc">
