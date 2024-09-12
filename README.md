@@ -23,7 +23,7 @@ Bi-Convex/Bi-Concave Lens Effect(Located at Source Plane's Origin)
 
 Results
 
-![all](https://github.com/user-attachments/assets/1f96a89c-3e22-4952-9b02-a2ad7cb8d3af)
+![all](https://github.com/user-attachments/assets/6d27b897-5ffb-4a64-8167-9cc8473d8761)
 
 ### Definition of coordinate system
 <img src="https://github.com/AngularSpectrumMTD/Diffraction/assets/65929274/3d690174-c7ba-43cb-9ccb-bd2ab466b13b" width="50%">
