@@ -179,7 +179,7 @@ void Diffraction::Initialize()
         throw std::runtime_error("Failed CoInitializeEx.");
     }
 
-    mUserDefinedImage = LoadTextureFromFile(L"image/input.png", true);//we cannot use the name "image" to texture
+    mUserDefinedImage = LoadTextureFromFile(L"image/input.png", true);
 }
 
 void Diffraction::Terminate()
@@ -198,17 +198,32 @@ void Diffraction::UpdateWindowText()
     f32 apertureRealSizeY = realSizeY * mDrawPolygonParam.ratio;
     f32 apertureRadius = sqrt(apertureRealSizeX * apertureRealSizeX + apertureRealSizeY * apertureRealSizeY);
 
-    windowText << L"  Mode : " << (mIsReverseMode ? L" ↓"  : L" ↑") <<
-        L"  Use Lens : " << (mIsUseLens ? L" YES" : L" NO") <<
-        L"  Lens Type : " << (mIsLensConcave ? L"()" : L")(") <<
-        L"  Focal Length [mm]: " << mQuadraticParam.focalLensgth * 1000 <<
-        L"  Polygon Angle : " << mDrawPolygonParam.N << 
-        L"  AngleX [deg]: " << mRotateInFourierParam.degX << 
-        L"  Y [deg]: " << mRotateInFourierParam.degY << 
-        L"  Z [deg]: " << mRotateInFourierParam.degZ << 
-        L"  Aperture Radius [mm]: " << apertureRadius * 1000 << 
-        L"  PropStep [um]: " << mPropagateDelta * 1000000 <<
-        L"  Prop [mm]: " << mGenerateFRFParam.propagateDistance * 1000;
+    if (mUserDefinedImage.res == nullptr)
+    {
+        windowText << L"  Mode : " << (mIsReverseMode ? L" ↓" : L" ↑") <<
+            L"  Use Lens : " << (mIsUseLens ? L" YES" : L" NO") <<
+            L"  Lens Type : " << (mIsLensConcave ? L"()" : L")(") <<
+            L"  Focal Length [mm]: " << mQuadraticParam.focalLensgth * 1000 <<
+            L"  Polygon Angle : " << mDrawPolygonParam.N <<
+            L"  AngleX [deg]: " << mRotateInFourierParam.degX <<
+            L"  Y [deg]: " << mRotateInFourierParam.degY <<
+            L"  Z [deg]: " << mRotateInFourierParam.degZ <<
+            L"  Aperture Radius [mm]: " << apertureRadius * 1000 <<
+            L"  PropStep [um]: " << mPropagateDelta * 1000000 <<
+            L"  Prop [mm]: " << mGenerateFRFParam.propagateDistance * 1000;
+    }
+    else
+    {
+        windowText << L"  Mode : " << (mIsReverseMode ? L" ↓" : L" ↑") <<
+            L"  Use Lens : " << (mIsUseLens ? L" YES" : L" NO") <<
+            L"  Lens Type : " << (mIsLensConcave ? L"()" : L")(") <<
+            L"  Focal Length [mm]: " << mQuadraticParam.focalLensgth * 1000 <<
+            L"  AngleX [deg]: " << mRotateInFourierParam.degX <<
+            L"  Y [deg]: " << mRotateInFourierParam.degY <<
+            L"  Z [deg]: " << mRotateInFourierParam.degZ <<
+            L"  PropStep [um]: " << mPropagateDelta * 1000000 <<
+            L"  Prop [mm]: " << mGenerateFRFParam.propagateDistance * 1000;
+    }
 
     std::wstring finalWindowText = std::wstring(GetTitle()) + windowText.str().c_str();
     SetWindowText(AppInvoker::GetHWND(), finalWindowText.c_str());

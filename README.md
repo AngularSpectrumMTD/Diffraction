@@ -7,6 +7,8 @@ Diffracted with SIGGRAPH icon
 
 ![siggraph](https://github.com/user-attachments/assets/9d17f42a-39fd-44ec-a5be-badae0f67c9b)
 
+![DiffractionTest1](https://github.com/user-attachments/assets/02ccd09e-9cd0-42db-84ee-a9d56b148234)
+
 Standard Diffraction
 
 <img src="https://github.com/user-attachments/assets/05864698-9223-4ba3-9f79-438fa55e4566" width="50%">
@@ -21,7 +23,7 @@ Bi-Convex/Bi-Concave Lens Effect(Located at Source Plane's Origin)
 
 Results
 
-<img src="https://github.com/user-attachments/assets/da9bd1d5-37ab-42f2-9dd4-cbdbc14eccbd" width="50%">
+![all](https://github.com/user-attachments/assets/1f96a89c-3e22-4952-9b02-a2ad7cb8d3af)
 
 ### Definition of coordinate system
 <img src="https://github.com/AngularSpectrumMTD/Diffraction/assets/65929274/3d690174-c7ba-43cb-9ccb-bd2ab466b13b" width="50%">
