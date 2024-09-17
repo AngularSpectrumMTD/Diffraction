@@ -179,7 +179,7 @@ void Diffraction::Initialize()
         throw std::runtime_error("Failed CoInitializeEx.");
     }
 
-    mUserDefinedImage = LoadTextureFromFile(L"image/input.png", true);
+    mUserDefinedImage = LoadTextureFromFile(L"image/input10.png", true);
 }
 
 void Diffraction::Terminate()
@@ -202,6 +202,7 @@ void Diffraction::UpdateWindowText()
     {
         windowText << L"  Mode : " << (mIsReverseMode ? L" ↓" : L" ↑") <<
             L"  Use Lens : " << (mIsUseLens ? L" YES" : L" NO") <<
+            L"  Use Auto Focused : " << (mIsAutoFocusMode ? L" YES" : L" NO") <<
             L"  Lens Type : " << (mIsLensConcave ? L"()" : L")(") <<
             L"  Focal Length [mm]: " << mQuadraticParam.focalLensgth * 1000 <<
             L"  Polygon Angle : " << mDrawPolygonParam.N <<
@@ -216,6 +217,7 @@ void Diffraction::UpdateWindowText()
     {
         windowText << L"  Mode : " << (mIsReverseMode ? L" ↓" : L" ↑") <<
             L"  Use Lens : " << (mIsUseLens ? L" YES" : L" NO") <<
+            L"  Use Auto Focused : " << (mIsAutoFocusMode ? L" YES" : L" NO") <<
             L"  Lens Type : " << (mIsLensConcave ? L"()" : L")(") <<
             L"  Focal Length [mm]: " << mQuadraticParam.focalLensgth * 1000 <<
             L"  AngleX [deg]: " << mRotateInFourierParam.degX <<
@@ -245,7 +247,12 @@ void Diffraction::OnKeyDown(UINT8 wparam)
         mDrawPolygonParam.ratio = Clamp(0.01, 0.5, mDrawPolygonParam.ratio + (mIsReverseMode ? -0.001 : 0.001));
         break;
     case 'P':
-        mGenerateFRFParam.propagateDistance = Clamp(UNIT_UM, 50 * UNIT_MM, mGenerateFRFParam.propagateDistance + (mIsReverseMode ? -mPropagateDelta : mPropagateDelta));
+        {
+            if (!mIsAutoFocusMode)
+            {
+                mGenerateFRFParam.propagateDistance = Clamp(UNIT_UM, 50 * UNIT_MM, mGenerateFRFParam.propagateDistance + (mIsReverseMode ? -mPropagateDelta : mPropagateDelta));
+            }
+        }
         break;
     case 'D':
         mPropagateDelta = Clamp(0.1 * UNIT_UM, 5 * UNIT_MM, mPropagateDelta + (mIsReverseMode ? -0.1 * UNIT_UM : 0.1 * UNIT_UM));
@@ -267,7 +274,10 @@ void Diffraction::OnKeyDown(UINT8 wparam)
         mQuadraticParam.isBiConcave = mIsLensConcave ? 1 : 0;
         break;
     case 'F':
-        mQuadraticParam.focalLensgth = Clamp(0.01 * UNIT_MM, 5 * UNIT_MM, mQuadraticParam.focalLensgth + (mIsReverseMode ? -0.1 * UNIT_MM : 0.1 * UNIT_MM));
+        mQuadraticParam.focalLensgth = Clamp(UNIT_UM, 50 * UNIT_MM, mQuadraticParam.focalLensgth + (mIsReverseMode ? -mPropagateDelta : mPropagateDelta));
+        break;
+    case VK_F1:
+        mIsAutoFocusMode = !mIsAutoFocusMode;
         break;
     case VK_SPACE:
         mIsReverseMode = !mIsReverseMode;
@@ -298,6 +308,11 @@ f32 Diffraction::Clamp(f32 min, f32 max, f32 src)
 
 void Diffraction::UpdateConstantBufferParams()
 {
+    if (mIsAutoFocusMode && mIsUseLens)
+    {
+        mGenerateFRFParam.propagateDistance = mQuadraticParam.focalLensgth;
+    }
+
     auto polygonConstantBuffer = mDrawPolygonCB.Get();
     mDevice->ImmediateBufferUpdateHostVisible(polygonConstantBuffer, &mDrawPolygonParam, sizeof(mDrawPolygonParam));
 
@@ -361,7 +376,7 @@ f32 Diffraction::getFrameRate()
 
 void Diffraction::BandLimitedASMProp()
 {
-    if (mRenderFrame == 0)
+    if ((mRenderFrame == 0) && (mUserDefinedImage.res != nullptr))
     {
         auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(mUserDefinedImage.res.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, STATE_SRV);
         mCommandList->ResourceBarrier(1, &barrier);

@@ -21,7 +21,7 @@ utility::TextureResource Diffraction::LoadTextureFromFile(const std::wstring& fi
         hr = LoadFromWICFile(fileName.c_str(), WIC_FLAGS_NONE, &metadata, image);
     }
 
-    if (hr == E_FAIL)
+    if (hr != S_OK)
     {
         OutputDebugString(L"Texture Load Missed.\n");
         if (!isNoExeption)

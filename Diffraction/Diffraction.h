@@ -279,6 +279,7 @@ private:
     bool mIsReverseMode = false;
     bool mIsUseLens = false;
     bool mIsLensConcave = true;
+    bool mIsAutoFocusMode = false;
 
     u32 mRenderFrame = 0;
 };
